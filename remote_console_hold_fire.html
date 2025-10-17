@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>远程控制台 — 炮机</title>
+  <style>
+    :root{
+      --bg:#f7f2f5;
+      --card:#ffffff;
+      --accent:#e5a5b5;
+      --accent-dark:#d89aad;
+      --muted:#9d8b94;
+      --glass: rgba(229,165,181,0.08);
+      --electric:#e5a5f5;
+      --radius:12px;
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      color:#5a4d54;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#f9f4f7 0%, #f5eff3 100%);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+    .panel{
+      width:980px;
+      max-width:98vw;
+      background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,245,250,0.9));
+      border-radius:16px;
+      padding:22px;
+      box-shadow: 0 8px 30px rgba(157,139,148,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:18px;
+      align-items:start;
+    }
+
+    .left, .right { 
+      background:var(--card); 
+      padding:16px; 
+      border-radius:12px;
+      box-shadow: 0 2px 12px rgba(229,165,181,0.08);
+    }
+    h1{ 
+      margin:0 0 10px; 
+      font-size:18px; 
+      letter-spacing:0.2px; 
+      color:var(--accent-dark);
+      font-weight:600;
+    }
+    .subtitle{ 
+      color:var(--muted); 
+      font-size:13px; 
+      margin-bottom:12px 
+    }
+
+    label{ 
+      display:block; 
+      font-size:13px; 
+      color:var(--muted); 
+      margin-bottom:6px;
+      font-weight:500;
+    }
+    .row{ margin-bottom:12px }
+    .control{ display:flex; gap:8px; align-items:center; }
+
+    input[type="range"]{
+      -webkit-appearance:none; 
+      height:6px; 
+      border-radius:8px; 
+      background:linear-gradient(90deg,#e5a5b5,#f0c5d1);
+      width:100%;
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; 
+      width:18px; 
+      height:18px; 
+      border-radius:50%; 
+      background:linear-gradient(135deg, #e5a5b5, #d89aad); 
+      box-shadow:0 2px 8px rgba(229,165,181,0.4);
+      cursor:pointer;
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:18px; 
+      height:18px; 
+      border-radius:50%; 
+      background:linear-gradient(135deg, #e5a5b5, #d89aad); 
+      box-shadow:0 2px 8px rgba(229,165,181,0.4);
+      border:none;
+      cursor:pointer;
+    }
+
+    select, button, input[type="number"], input[type="text"]{
+      border-radius:8px; 
+      border:1px solid rgba(229,165,181,0.2);
+      padding:8px 10px; 
+      background:var(--glass); 
+      color:#5a4d54;
+      font-size:13px;
+    }
+
+    button.primary{
+      background: linear-gradient(90deg,#e5a5b5, #f0c5d1);
+      color:#5a4d54; 
+      font-weight:600; 
+      border:none; 
+      padding:10px 14px; 
+      border-radius:10px;
+      cursor:pointer;
+      box-shadow: 0 2px 8px rgba(229,165,181,0.25);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    button.primary:hover{
+      background: linear-gradient(90deg,#d89aad, #e5a5b5);
+      box-shadow: 0 4px 12px rgba(229,165,181,0.35);
+      transform: translateY(-1px);
+    }
+    button.ghost{
+      background:transparent; 
+      border:1px solid rgba(229,165,181,0.3); 
+      color:var(--muted); 
+      cursor:pointer;
+      padding:8px 10px; 
+      border-radius:8px;
+      transition: all 0.2s ease;
+    }
+    button.ghost:hover{
+      background:rgba(229,165,181,0.1);
+      border-color:rgba(229,165,181,0.5);
+    }
+    .small{ font-size:12px; color:var(--muted) }
+
+    .vis{
+      height:300px; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      gap:20px;
+    }
+    .device{
+      width:180px; 
+      height:220px; 
+      border-radius:20px; 
+      background:linear-gradient(180deg,#faf7f9,#f5eff3);
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      position:relative; 
+      box-shadow:0 8px 20px rgba(229,165,181,0.15);
+      border:1px solid rgba(229,165,181,0.2);
+      overflow:hidden;
+    }
+    .piston{
+      width:60px; 
+      height:140px; 
+      border-radius:999px; 
+      background:linear-gradient(180deg,#f0c5d1,#e5a5b5);
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      position:relative;
+      transform-origin:center;
+      box-shadow: 0 4px 12px rgba(229,165,181,0.3);
+    }
+    .piston:after{
+      content:""; 
+      position:absolute; 
+      left:50%; 
+      transform:translateX(-50%); 
+      bottom:-8px;
+      width:40px; 
+      height:20px; 
+      border-radius:10px; 
+      background:rgba(229,165,181,0.15);
+    }
+    .shaft{ 
+      width:10px; 
+      height:180px; 
+      background:linear-gradient(180deg,#d4c5cc,#c4b5bc); 
+      position:absolute; 
+      left:calc(50% - 5px); 
+      top:20px; 
+      border-radius:6px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .log{
+      max-height:120px; 
+      overflow:auto; 
+      background: rgba(229,165,181,0.05); 
+      padding:10px; 
+      border-radius:8px; 
+      font-size:12px; 
+      color:var(--muted);
+      border:1px solid rgba(229,165,181,0.1);
+    }
+    .flex{ display:flex; gap:8px; align-items:center }
+    .preset-list{ display:flex; gap:8px; flex-wrap:wrap }
+    .chip{ 
+      padding:6px 8px; 
+      border-radius:999px; 
+      background:rgba(229,165,181,0.1); 
+      font-size:13px; 
+      cursor:pointer; 
+      border:1px solid rgba(229,165,181,0.2);
+      transition: all 0.2s ease;
+    }
+    .chip:hover{
+      background:rgba(229,165,181,0.2);
+      border-color:rgba(229,165,181,0.4);
+    }
+
+    /* 电流强度显示 */
+    .electric-display{
+      width:240px;
+      height:140px;
+      background:linear-gradient(180deg, rgba(229,165,245,0.05), rgba(229,165,181,0.05));
+      border-radius:12px;
+      border:1px solid rgba(229,165,245,0.2);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      padding:12px;
+    }
+    .electric-bars{
+      flex:1;
+      display:flex;
+      align-items:flex-end;
+      gap:4px;
+      justify-content:center;
+      position:relative;
+    }
+    .bar{
+      width:14px;
+      background:linear-gradient(180deg, #e5a5f5, #d89aad);
+      border-radius:3px 3px 0 0;
+      transition:height 0.12s ease;
+      position:relative;
+      box-shadow: 0 0 8px rgba(229,165,245,0.3);
+    }
+    .bar.pulse{
+      animation: pulse 0.3s ease;
+    }
+    @keyframes pulse{
+      0%, 100%{transform:scaleY(1);}
+      50%{transform:scaleY(1.12);}
+    }
+    .electric-value{
+      text-align:center;
+      font-size:24px;
+      font-weight:700;
+      color:#e5a5f5;
+      margin-top:8px;
+    }
+    .lightning{
+      position:absolute;
+      width:100%;
+      height:100%;
+      top:0;
+      left:0;
+      pointer-events:none;
+      opacity:0;
+    }
+    .lightning.active{
+      animation: flash 0.18s ease;
+    }
+    @keyframes flash{
+      0%, 100%{opacity:0;}
+      50%{opacity:0.6;}
+    }
+    .lightning path{
+      stroke:#e5a5f5;
+      stroke-width:2;
+      fill:none;
+      filter:drop-shadow(0 0 4px #e5a5f5);
+    }
+
+    @media (max-width:920px){
+      .panel{ grid-template-columns: 1fr; }
+      .left { order:2 }
+      .right { order:1 }
+      .vis{ height:220px }
+    }
+  </style>
+</head>
+<body>
+  <div class="panel" role="application" aria-label="远程控制面板">
+    <div class="left" aria-hidden="false">
+      <h1>远程控制台</h1>
+      <div class="subtitle">设备管理 · 模式控制 · 预设</div>
+
+      <div class="row">
+        <label>连接</label>
+        <div class="control">
+          <select id="deviceSelect" aria-label="设备选择">
+            <option value="AX-2103">AX-2103 · 局域网</option>
+            <option value="AX-2103-BLE">AX-2103 · BLE</option>
+          </select>
+          <button id="connectBtn" class="ghost">Connect</button>
+          <div id="status" class="small" style="margin-left:8px">Ready</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>模式</label>
+        <div class="control">
+          <select id="mode" aria-label="选择控制模式">
+            <option value="wave">波形（Wave）</option>
+            <option value="pulse">脉冲（Pulse）</option>
+            <option value="random">随机（Random）</option>
+            <option value="manual">手动（Manual）</option>
+          </select>
+          <div style="flex:1"></div>
+          <button id="startBtn" class="primary">开始</button>
+          <button id="stopBtn" class="ghost">停止</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>速度（Speed） <span id="speedVal" class="small" style="margin-left:8px">50</span></label>
+        <input id="speed" type="range" min="1" max="100" value="50" />
+      </div>
+
+      <div class="row">
+        <label>深度（Depth） <span id="depthVal" class="small" style="margin-left:8px">50</span></label>
+        <input id="depth" type="range" min="0" max="100" value="50" />
+      </div>
+
+      <div class="row">
+        <label>力度/强度（Intensity） <span id="intVal" class="small" style="margin-left:8px">50</span></label>
+        <input id="intensity" type="range" min="0" max="100" value="50" />
+      </div>
+
+      <div class="row">
+        <label>电流强度（Electric） <span id="electricVal" class="small" style="margin-left:8px">0</span></label>
+        <div class="control" style="gap:10px">
+          <input id="electric" type="range" min="0" max="100" value="0" style="flex:1" />
+          <button id="fireBtn" class="primary" title="按住输出，松开停止">按住放电</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>手动控制（Manual）</label>
+        <div class="control">
+          <button id="stepIn" class="ghost">向里一步</button>
+          <button id="stepOut" class="ghost">向外一步</button>
+          <input id="manualStep" type="number" value="5" min="1" max="50" style="width:84px" />
+        </div>
+      </div>
+
+      <div class="row">
+        <label>预设</label>
+        <div class="preset-list" id="presetList" aria-live="polite"></div>
+        <div style="margin-top:10px;" class="control">
+          <input id="presetName" type="text" placeholder="预设名称" aria-label="预设名称输入"/>
+          <button id="savePreset" class="ghost">保存预设</button>
+          <button id="exportPresets" class="ghost">导出 JSON</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>系统日志</label>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <div class="right" aria-hidden="false">
+      <div class="vis" role="region" aria-label="设备可视化">
+        <div class="device" id="device">
+          <div class="shaft" aria-hidden="true"></div>
+          <div class="piston" id="piston" style="transform: translateY(0px)"></div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#5a4d54">实时参数</div>
+              <div class="small" id="liveParams">模式：— · 速度：— · 深度：— · 强度：— · 电流：—</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">网络延迟</div>
+              <div id="latency" style="font-size:13px; font-weight:700; color:#e5a5b5">0 ms</div>
+            </div>
+          </div>
+
+          <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+            <div class="electric-display">
+              <div class="electric-bars" id="electricBars"></div>
+              <div class="electric-value"><span id="currentValue">0</span> mA</div>
+              <svg class="lightning" id="lightning" viewBox="0 0 240 140">
+                <path id="lightningPath" d=""/>
+              </svg>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:#5a4d54">快捷</div>
+            <div class="flex">
+              <button class="chip" data-preset='{"name":"Gentle Wave","mode":"wave","speed":35,"depth":30,"intensity":30,"electric":15}'>Gentle Wave</button>
+              <button class="chip" data-preset='{"name":"Fast Pulse","mode":"pulse","speed":85,"depth":50,"intensity":70,"electric":45}'>Fast Pulse</button>
+              <button class="chip" data-preset='{"name":"Deep Strong","mode":"wave","speed":60,"depth":90,"intensity":90,"electric":75}'>Deep Strong</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const connectBtn = document.getElementById('connectBtn');
+    const status = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const speedEl = document.getElementById('speed');
+    const depthEl = document.getElementById('depth');
+    const intEl = document.getElementById('intensity');
+    const electricEl = document.getElementById('electric');
+    const fireBtn = document.getElementById('fireBtn');
+    const speedVal = document.getElementById('speedVal');
+    const depthVal = document.getElementById('depthVal');
+    const intVal = document.getElementById('intVal');
+    const electricVal = document.getElementById('electricVal');
+    const modeEl = document.getElementById('mode');
+    const piston = document.getElementById('piston');
+    const logEl = document.getElementById('log');
+    const liveParams = document.getElementById('liveParams');
+    const latencyEl = document.getElementById('latency');
+    const electricBars = document.getElementById('electricBars');
+    const currentValue = document.getElementById('currentValue');
+    const lightning = document.getElementById('lightning');
+    const lightningPath = document.getElementById('lightningPath');
+    const presetList = document.getElementById('presetList');
+    const savePresetBtn = document.getElementById('savePreset');
+    const presetNameInput = document.getElementById('presetName');
+    const exportPresetsBtn = document.getElementById('exportPresets');
+
+    let isConnected = false;
+    let isRunning = false;
+    let tickHandle = null;
+    let startTime = 0;
+    let latency = 0;
+    let presets = [];
+    let bars = [];
+    let firing = false;
+    let flickerTimer = null;
+
+    // 电流柱状条
+    for(let i=0;i<12;i++){
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = '0px';
+      electricBars.appendChild(bar);
+      bars.push(bar);
+    }
+
+    // 工具
+    function log(msg){
+      const t = new Date().toLocaleTimeString();
+      logEl.innerHTML = \`<div>[\${t}] \${escapeHtml(msg)}</div>\` + logEl.innerHTML;
+    }
+    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function map(v,a,b,c,d){ return c + (d - c) * ((v - a) / (b - a)); }
+
+    // 预设渲染
+    function renderPresets(){
+      presetList.innerHTML = '';
+      presets.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = p.name || ('preset-'+(i+1));
+        btn.onclick = ()=> applyPreset(p);
+        const del = document.createElement('button');
+        del.className = 'chip';
+        del.textContent = '删除';
+        del.style.background='transparent';
+        del.onclick = (e)=>{ e.stopPropagation(); presets.splice(i,1); renderPresets(); };
+        const wrap = document.createElement('div');
+        wrap.style.display='inline-flex'; wrap.style.gap='6px'; wrap.style.alignItems='center';
+        wrap.appendChild(btn); wrap.appendChild(del);
+        presetList.appendChild(wrap);
+      });
+    }
+    renderPresets();
+
+    // 连接
+    connectBtn.addEventListener('click', ()=>{
+      if(!isConnected){
+        connectBtn.textContent='Connecting…';
+        status.textContent='Linking';
+        latency = Math.floor(Math.random()*400)+50;
+        latencyEl.textContent = latency + ' ms';
+        setTimeout(()=> {
+          isConnected = true;
+          connectBtn.textContent='Disconnect';
+          status.textContent='Connected';
+          log('连接已建立 · 往返延迟 ' + latency + ' ms');
+        }, latency + 300);
+      } else {
+        isConnected = false;
+        connectBtn.textContent='Connect';
+        status.textContent='Ready';
+        latency = 0;
+        latencyEl.textContent = '0 ms';
+        stopRun();
+        stopFiring();
+        log('连接已断开');
+      }
+    });
+
+    // UI 同步
+    speedEl.addEventListener('input', ()=> { speedVal.textContent = speedEl.value; updateLiveParams(); });
+    depthEl.addEventListener('input', ()=> { depthVal.textContent = depthEl.value; updateLiveParams(); });
+    intEl.addEventListener('input',   ()=> { intVal.textContent   = intEl.value;   updateLiveParams(); });
+    electricEl.addEventListener('input', ()=> { electricVal.textContent = electricEl.value; updateLiveParams(); });
+
+    modeEl.addEventListener('change', updateLiveParams);
+    function updateLiveParams(){
+      liveParams.textContent = \`模式：\${modeEl.value} · 速度：\${speedEl.value} · 深度：\${depthEl.value} · 强度：\${intEl.value} · 电流：\${electricEl.value}\`;
+    }
+    updateLiveParams();
+
+    // 机械开始/停止
+    startBtn.addEventListener('click', ()=>{
+      if(!isConnected){ log('无法开始：未连接设备。'); return; }
+      if(isRunning) return;
+      isRunning = true;
+      startTime = performance.now();
+      log('任务开始 — 模式: ' + modeEl.value);
+      tickHandle = requestAnimationFrame(tick);
+    });
+
+    stopBtn.addEventListener('click', ()=>{ stopRun(); });
+    function stopRun(){
+      if(!isRunning) { log('已停止。'); return; }
+      isRunning = false;
+      if(tickHandle) cancelAnimationFrame(tickHandle);
+      tickHandle = null;
+      piston.style.transform = \`translateY(0px)\`;
+      log('任务结束');
+    }
+
+    // 手动步进
+    document.getElementById('stepIn').addEventListener('click', ()=>{
+      if(modeEl.value !== 'manual'){ log('手动模式未启用'); return; }
+      const step = parseFloat(document.getElementById('manualStep').value) || 5;
+      doManualStep(-step);
+    });
+    document.getElementById('stepOut').addEventListener('click', ()=>{
+      if(modeEl.value !== 'manual'){ log('手动模式未启用'); return; }
+      const step = parseFloat(document.getElementById('manualStep').value) || 5;
+      doManualStep(step);
+    });
+    function doManualStep(delta){
+      const cur = parseFloat(piston.dataset.pos || 0);
+      const next = Math.max(-100, Math.min(100, cur + delta));
+      piston.dataset.pos = next;
+      piston.style.transform = \`translateY(\${next}px)\`;
+      log(\`手动移动 \${delta>0 ? '向外' : '向内'} \${Math.abs(delta)} 单位\`);
+    }
+
+    // —— 按住放电 ——
+    fireBtn.addEventListener('mousedown', startFiring);
+    fireBtn.addEventListener('touchstart', startFiring, {passive:true});
+    // 停止：鼠标/触摸释放或离开按钮
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => {
+      fireBtn.addEventListener(ev, stopFiring);
+    });
+    // 键盘：按住 F 放电
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'f' || e.key === 'F'){ startFiring(); }
+      if(e.key === ' ') { e.preventDefault(); if(isRunning) stopRun(); else startBtn.click(); }
+      if(e.key === 'c' || e.key === 'C'){ connectBtn.click(); }
+    });
+    window.addEventListener('keyup', (e)=>{
+      if(e.key === 'f' || e.key === 'F'){ stopFiring(); }
+    });
+
+    function startFiring(){
+      if(firing) return;
+      if(!isConnected){ log('放电失败：未连接。'); return; }
+      const level = parseInt(electricEl.value,10) || 0;
+      if(level <= 0){ log('放电被忽略：电流强度为 0。'); return; }
+      firing = true;
+      fireBtn.classList.add('active');
+      applyElectricLevel(level);
+      log('放电开始：' + level + ' mA');
+      // 轻微抖动/脉动效果
+      flickerTimer = setInterval(()=>{
+        if(!firing) return;
+        pulseBars();
+        if(level > 30){
+          lightning.classList.add('active');
+          lightningPath.setAttribute('d', generateLightning());
+          setTimeout(()=> lightning.classList.remove('active'), 180);
+        }
+      }, 240);
+    }
+
+    function stopFiring(){
+      if(!firing) return;
+      firing = false;
+      fireBtn.classList.remove('active');
+      if(flickerTimer){ clearInterval(flickerTimer); flickerTimer = null; }
+      clearElectric();
+      log('放电结束');
+    }
+
+    function applyElectricLevel(level){
+      currentValue.textContent = level;
+      const maxH = 100; // 柱条最大高度（px）
+      bars.forEach((bar, i) => {
+        const factor = map(i, 0, bars.length-1, 1, 0.25); // 左高右低
+        const h = Math.max(0, factor * level / 100 * maxH);
+        bar.style.height = h + 'px';
+      });
+    }
+    function pulseBars(){
+      bars.forEach((bar, i) => {
+        bar.classList.add('pulse');
+        setTimeout(()=> bar.classList.remove('pulse'), 240);
+      });
+    }
+    function clearElectric(){
+      bars.forEach(b => b.style.height = '0px');
+      currentValue.textContent = '0';
+    }
+
+    function generateLightning(){
+      const path = [];
+      let x = 20 + Math.random() * 80;
+      let y = 10;
+      path.push(\`M \${x} \${y}\`);
+      while(y < 130){
+        x += (Math.random() - 0.5) * 40;
+        y += 20 + Math.random() * 20;
+        x = Math.max(10, Math.min(230, x));
+        path.push(\`L \${x} \${y}\`);
+      }
+      return path.join(' ');
+    }
+
+    // 动画循环（机械）
+    function tick(now){
+      if(!isRunning) return;
+      const elapsed = (now - startTime) / 1000;
+      const mode = modeEl.value;
+      const speed = parseFloat(speedEl.value);
+      const depth = parseFloat(depthEl.value);
+      const intensity = parseFloat(intEl.value);
+
+      latencyEl.textContent = latency + ' ms';
+
+      let pos = 0;
+      const basePx = map(depth, 0, 100, 0, 80);
+
+      if(mode === 'wave'){
+        const freq = map(speed, 1, 100, 0.4, 3.5);
+        pos = Math.sin(elapsed * freq * Math.PI * 2) * basePx * (intensity/100);
+      } else if(mode === 'pulse'){
+        const rate = map(speed, 1, 100, 0.5, 10);
+        const phase = (elapsed * rate) % 1;
+        pos = (phase < 0.15) ? basePx * (intensity/100) : 0;
+      } else if(mode === 'random'){
+        const rnd = Math.sin(elapsed * map(speed,1,100,1,10) * 1.7) * Math.random();
+        pos = rnd * basePx * (intensity/100);
+      } else if(mode === 'manual'){
+        pos = parseFloat(piston.dataset.pos || 0);
+      }
+
+      const cur = parseFloat(piston.dataset._smooth || 0);
+      const smooth = cur + (pos - cur) * 0.18;
+      piston.dataset._smooth = smooth;
+      piston.style.transform = \`translateY(\${ -smooth }px)\`;
+      piston.dataset.pos = -smooth;
+
+      if(Math.random() < 0.02) {
+        log(\`运行中 — 模式:\${mode} 速度:\${speed} 深度:\${depth} 强度:\${intensity}\`);
+      }
+      tickHandle = requestAnimationFrame(tick);
+    }
+
+    // 定时刷新 UI 数字
+    setInterval(()=> {
+      speedVal.textContent = speedEl.value;
+      depthVal.textContent = depthEl.value;
+      intVal.textContent = intEl.value;
+      electricVal.textContent = electricEl.value;
+      updateLiveParams();
+    }, 120);
+
+    // 预设（保留电流值）
+    function applyPreset(p){
+      modeEl.value = p.mode || 'wave';
+      speedEl.value = p.speed || 50; speedVal.textContent = p.speed || 50;
+      depthEl.value = p.depth || 50; depthVal.textContent = p.depth || 50;
+      intEl.value = p.intensity || 50; intVal.textContent = p.intensity || 50;
+      if(typeof p.electric === 'number'){ electricEl.value = p.electric; electricVal.textContent = p.electric; }
+      updateLiveParams();
+    }
+    savePresetBtn.addEventListener('click', ()=>{
+      const name = presetNameInput.value.trim() || ('Preset ' + (presets.length+1));
+      const p = {
+        name,
+        mode: modeEl.value,
+        speed: parseInt(speedEl.value),
+        depth: parseInt(depthEl.value),
+        intensity: parseInt(intEl.value),
+        electric: parseInt(electricEl.value),
+        created: (new Date()).toISOString()
+      };
+      presets.push(p); renderPresets(); log('已保存预设：' + name);
+      presetNameInput.value='';
+    });
+    exportPresetsBtn.addEventListener('click', ()=>{
+      const data = JSON.stringify(presets, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'presets.json'; a.click();
+      URL.revokeObjectURL(url);
+      log('预设已导出');
+    });
+
+    log('系统启动完成');
+  })();
+  </script>
+</body>
+</html>
