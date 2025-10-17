@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>远程控制台 — 炮机</title>
+<title>远程控制台</title>
 <style>
   :root{ --card:#ffffff; --accent:#e5a5b5; --accent2:#d89aad; --muted:#9d8b94;
     font-family: Inter, "Helvetica Neue", Arial, sans-serif; color:#5a4d54; }
@@ -108,17 +108,31 @@
   <div class="right">
     <div class="vis" role="region" aria-label="设备与示波">
       <div class="device">
-        <!-- 统一 SVG：外壁(圆角矩形) + 固定拉长椭圆内腔(底部开放口) + 中轴(固定) + 柱体(可动) -->
+        <!-- 统一 SVG：外壁(圆角矩形) + 椭圆内腔(仅保留与外壁重合区域，且抠除重合边) + 中轴(固定) + 柱体(可动) -->
         <svg id="deviceSvg" viewBox="0 0 240 260" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <defs>
             <linearGradient id="outerFill" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stop-color="#fbeff3"/>
               <stop offset="100%" stop-color="#f6e8ee"/>
             </linearGradient>
+
+            <!-- 外壁路径（圆角矩形） -->
+            <clipPath id="clipOuter">
+              <path id="outerPath"></path>
+            </clipPath>
+
+            <!-- 遮罩：白色=保留；黑色=抠除（把与椭圆重合的外壁填充+描边一起“挖掉”） -->
+            <mask id="tissueMask" maskUnits="userSpaceOnUse">
+              <rect x="0" y="0" width="240" height="260" fill="white"/>
+              <!-- 只在外壁范围内，用黑色椭圆把重合部分扣掉 -->
+              <path id="maskInnerEllipse" fill="black" clip-path="url(#clipOuter)"></path>
+            </mask>
           </defs>
 
-          <!-- 组织层（外壁减“拉长椭圆内腔”），evenodd 实现镂空；内腔底部超出外壁形成开放口 -->
-          <path id="tissuePath" fill="url(#outerFill)" stroke="rgba(229,165,181,0.55)" stroke-width="1.2" fill-rule="evenodd"></path>
+          <!-- 外壁（填充+描边都受遮罩影响，重合处的边线也会被“去除”） -->
+          <g id="tissueGroup" mask="url(#tissueMask)">
+            <path id="tissueShape" fill="url(#outerFill)" stroke="rgba(229,165,181,0.55)" stroke-width="1.2"></path>
+          </g>
 
           <!-- 中轴（固定） -->
           <rect x="118" y="20" width="4" height="220" rx="2"
@@ -131,6 +145,7 @@
             <rect x="100" y="190" width="40" height="14" rx="7" fill="rgba(229,165,181,0.3)"/>
           </g>
         </svg>
+
         <div class="small" style="position:absolute; bottom:8px; left:12px;">
           网络延迟：<span id="latency" style="font-weight:700; color:#e5a5b5">0 ms</span>
         </div>
@@ -160,7 +175,7 @@
           <canvas id="suckCanvas" width="500" height="120"></canvas>
         </div>
 
-        <!-- 仅保留底部快捷预设 -->
+        <!-- 底部快捷预设 -->
         <div>
           <div class="small" style="font-weight:600; margin-bottom:6px">快捷预设</div>
           <div class="control" id="quickChips"></div>
@@ -172,7 +187,7 @@
 
 <script>
 (function(){
-  // 基础 refs
+  // refs
   const connectBtn = document.getElementById('connectBtn');
   const status = document.getElementById('status');
   const startBtn = document.getElementById('startBtn');
@@ -188,16 +203,19 @@
   const liveParams = document.getElementById('liveParams');
   const latencyEl = document.getElementById('latency');
 
-  // SVG
-  const tissuePath = document.getElementById('tissuePath');
+  // SVG elements
+  const tissueShape = document.getElementById('tissueShape');
+  const outerPath = document.getElementById('outerPath');
+  const maskInnerEllipse = document.getElementById('maskInnerEllipse');
   const pistonGroup = document.getElementById('pistonGroup');
 
-  // 示波 & 控件
+  // canvases
   const pulseCanvas = document.getElementById('pulseCanvas'), pctx = pulseCanvas.getContext('2d');
+  const suckCanvas = document.getElementById('suckCanvas'), sctx = suckCanvas.getContext('2d');
+
+  // controls (mA / suction)
   const maUpBtn = document.getElementById('maUp'), maDownBtn = document.getElementById('maDown');
   const maText = document.getElementById('currentMA');
-
-  const suckCanvas = document.getElementById('suckCanvas'), sctx = suckCanvas.getContext('2d');
   const suckRateEl = document.getElementById('suckRate');
   const suckRateLabel = document.getElementById('suckRateLabel');
   const suckRateLabel2 = document.getElementById('suckRateLabel2');
@@ -209,38 +227,130 @@
   const suckDownBtn = document.getElementById('suckDown');
   const toggleSuckBtn = document.getElementById('toggleSuck');
 
-  const quickChips = document.getElementById('quickChips');
-
-  // 状态
-  let isConnected=false, isRunning=false, tickHandle=null, startTime=0, latency=0;
+  // state
+  let isConnected=false, isRunning=false, tickHandle=null, startTime=performance.now(), latency=0;
   let currentMA = 40;
   let suckLevel=5, suckOn=false;
 
-  // 视觉（统一 viewBox）
+  // geometry
   const VB_W=240, VB_H=260;
-  const OUT_X=20, OUT_Y=12, OUT_W=200, OUT_H=236, OUT_R=28; // 外壁圆角矩形
-  const P_W=60, P_H=140;                                    // 柱体尺寸
-  const TRAVEL=78;                                          // 柱体最大位移（SVG单位）
+  const OUT_X=20, OUT_Y=12, OUT_W=200, OUT_H=236, OUT_R=28;
+  const P_W=60, P_H=140;
+  const TRAVEL=78;
   let posSmooth=0;
 
-  // 快捷预设（仅底部）
+  // quick presets
+  const quickChips = document.getElementById('quickChips');
   const presets = [
     {name:"柔和开启",   mode:"wave",  speed:30, depth:25, intensity:30, currentMA:20, suckRate:30, suckPattern:"continuous", suckLevel:3, suckOn:true},
     {name:"节律脉冲",   mode:"pulse", speed:65, depth:40, intensity:55, currentMA:45, suckRate:50, suckPattern:"pulse",      suckLevel:6, suckOn:true},
     {name:"深度推进",   mode:"wave",  speed:55, depth:80, intensity:70, currentMA:35, suckRate:40, suckPattern:"continuous", suckLevel:5, suckOn:false},
     {name:"快速脉冲",   mode:"pulse", speed:85, depth:50, intensity:80, currentMA:60, suckRate:70, suckPattern:"pulse",      suckLevel:7, suckOn:true},
   ];
-  presets.forEach(p=>{
-    const b=document.createElement('button'); b.textContent=p.name; b.addEventListener('click',()=>applyPreset(p));
-    quickChips.appendChild(b);
-  });
+  presets.forEach(p=>{ const b=document.createElement('button'); b.textContent=p.name; b.onclick=()=>applyPreset(p); quickChips.appendChild(b); });
 
-  // 工具
+  // utils
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const map=(v,a,b,c,d)=>c + (d-c)*((v-a)/(b-a));
-  const log = m => { const t=new Date().toLocaleTimeString(); logEl.innerHTML=`<div>[${t}] ${m}</div>`+logEl.innerHTML; };
+  const log=m=>{ const t=new Date().toLocaleTimeString(); logEl.innerHTML=`<div>[${t}] ${m}</div>`+logEl.innerHTML; };
 
-  // 连接
+  // outer rounded rectangle path
+  function roundedRectPath(x,y,w,h,r){
+    const x2=x+w, y2=y+h;
+    return [
+      `M ${x+r} ${y}`,
+      `H ${x2-r}`, `Q ${x2} ${y} ${x2} ${y+r}`,
+      `V ${y2-r}`, `Q ${x2} ${y2} ${x2-r} ${y2}`,
+      `H ${x+r}`, `Q ${x} ${y2} ${x} ${y2-r}`,
+      `V ${y+r}`, `Q ${x} ${y} ${x+r} ${y}`,
+      'Z'
+    ].join(' ');
+  }
+  // ellipse closed path
+  function ellipsePath(cx,cy,rx,ry){
+    const p1 = `${(cx - rx).toFixed(2)} ${cy.toFixed(2)}`;
+    const p2 = `${(cx + rx).toFixed(2)} ${cy.toFixed(2)}`;
+    return `M ${p1} A ${rx} ${ry} 0 1 0 ${p2} A ${rx} ${ry} 0 1 0 ${p1} Z`;
+  }
+
+  // init outer shape (once)
+  const outerD = roundedRectPath(OUT_X, OUT_Y, OUT_W, OUT_H, OUT_R);
+  outerPath.setAttribute('d', outerD);
+  tissueShape.setAttribute('d', outerD);
+
+  // breathing oscillator (slow, frequency tied to speed)
+  const BREATH_AMP = 0.06;            // ±6%
+  function currentBreathRx(baseRx, tSec){
+    const spd = +speedEl.value || 50;
+    const f = map(spd, 1,100, 0.08,0.5);   // 0.08–0.5 Hz（很慢，不会太快）
+    return baseRx * (1 + BREATH_AMP * Math.sin(2*Math.PI*f*tSec));
+  }
+
+  // build masked inner ellipse (only overlapping area is removed; edges also removed)
+  function updateTissueEllipse(tSec=0){
+    // 顶部接近外壁上边 6px；底部向下超出 14px（但我们只在外壁内部裁剪）
+    const yTop = OUT_Y + 6;
+    const yBottom = OUT_Y + OUT_H + 14;
+    const cy = (yTop + yBottom)/2;
+    const ry = (yBottom - yTop)/2;
+
+    const baseRx = (P_W/2) + 6;
+    const rx = Math.max(10, Math.min(OUT_W*0.48, currentBreathRx(baseRx, tSec)));
+
+    const innerD = ellipsePath(VB_W/2, cy, rx, ry);
+    maskInnerEllipse.setAttribute('d', innerD); // 通过 clipPath #clipOuter 只影响外壁内部
+  }
+
+  // piston motion (independent of ellipse)
+  function setPistonByNorm(norm){
+    const ny=clamp(norm,-1,1);
+    const centerY = VB_H/2 - ny*TRAVEL;
+    pistonGroup.setAttribute('transform', `translate(0, ${centerY - (P_H/2)})`);
+  }
+
+  // canvases helpers
+  function grid(ctx,w,h){
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle='rgba(229,165,181,0.25)'; ctx.lineWidth=1;
+    for(let x=0;x<w;x+=28){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for(let y=0;y<h;y+=28){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.strokeStyle='rgba(216,154,173,0.8)'; ctx.beginPath(); ctx.moveTo(0,h*0.75); ctx.lineTo(w,h*0.75); ctx.stroke();
+  }
+  function clearScope(ctx,canvas){ grid(ctx,canvas.width,canvas.height); }
+  clearScope(pctx,pulseCanvas); clearScope(sctx,suckCanvas);
+
+  // pulse draw
+  function drawPulseStep(){
+    const w=pulseCanvas.width, h=pulseCanvas.height;
+    const img=pctx.getImageData(2,0,w-2,h); pctx.putImageData(img,0,0);
+    pctx.clearRect(w-2,0,2,h);
+    pctx.strokeStyle='rgba(229,165,181,0.25)'; pctx.beginPath(); pctx.moveTo(w-2,0); pctx.lineTo(w-2,h); pctx.stroke();
+
+    const hz=map(+speedEl.value,1,100,0.5,10), duty=0.2;
+    const t=(performance.now()/1000)%1, phase=(t*hz)%1;
+    const high = isRunning && phase<duty;
+    const amp = currentMA/100, baseline=h*0.75, highY = baseline - amp*(h*0.6);
+    pctx.strokeStyle='rgba(229,165,181,0.95)'; pctx.lineWidth=2;
+    pctx.beginPath(); pctx.moveTo(w-2, high?highY:baseline); pctx.lineTo(w-2, baseline); pctx.stroke();
+  }
+
+  // suction draw
+  function drawSuckStep(){
+    const w=suckCanvas.width, h=suckCanvas.height;
+    const img=sctx.getImageData(2,0,w-2,h); sctx.putImageData(img,0,0);
+    sctx.clearRect(w-2,0,2,h);
+    sctx.strokeStyle='rgba(229,165,181,0.25)'; sctx.beginPath(); sctx.moveTo(w-2,0); sctx.lineTo(w-2,h); sctx.stroke();
+
+    const hz=map(+suckRateEl.value,1,100,0.5,8);
+    const t=(performance.now()/1000)%1, phase=(t*hz)%1;
+    const pattern=suckPatternEl.value;
+    let high=false; if(pattern==='continuous'){ high=suckOn; } else { high=suckOn && (phase<0.33); }
+    const amp=suckLevel/10, baseline=h*0.7, highY = baseline - amp*(h*0.55);
+    sctx.strokeStyle='rgba(216,154,173,0.95)'; sctx.lineWidth=2;
+    sctx.beginPath(); sctx.moveTo(w-2, high?highY:baseline); sctx.lineTo(w-2, baseline); sctx.stroke();
+  }
+
+  // connect
   connectBtn.addEventListener('click', ()=>{
     if(!isConnected){
       connectBtn.textContent='Connecting…'; status.textContent='Linking';
@@ -252,18 +362,17 @@
     }
   });
 
-  // 文本联动
+  // text bindings
   function updateLive(){
     liveParams.textContent=`推进：${modeEl.value} · 速度：${speedEl.value} · 深度：${depthEl.value} · 机械强度：${intEl.value}`;
-    updateTissueEllipse(); // 速度变化时，更新内腔横向半轴的“轻呼吸”
   }
-  ;[speedEl,depthEl,intEl,modeEl].forEach(el=>el.addEventListener('input',updateLive));
+  [speedEl,depthEl,intEl,modeEl].forEach(el=>el.addEventListener('input',updateLive));
   speedEl.addEventListener('input',()=>speedVal.textContent=speedEl.value);
   depthEl.addEventListener('input',()=>depthVal.textContent=depthEl.value);
   intEl.addEventListener('input',()=>intVal.textContent=intEl.value);
   updateLive();
 
-  // 吮吸
+  // suction controls
   function setSuckLevel(v){ suckLevel=clamp(Math.round(v),0,10); suckLevelText.textContent=suckLevel; suckLevelBadge.textContent=suckLevel; }
   suckUpBtn.addEventListener('click',()=>setSuckLevel(suckLevel+1));
   suckDownBtn.addEventListener('click',()=>setSuckLevel(suckLevel-1));
@@ -280,7 +389,7 @@
     log('吮吸 '+(suckOn?'开启':'关闭'));
   });
 
-  // 电流 mA
+  // current (mA)
   function setMA(v){ currentMA=clamp(Math.round(v),0,100); maText.textContent=currentMA; }
   maUpBtn.addEventListener('click',()=>setMA(currentMA+5));
   maDownBtn.addEventListener('click',()=>setMA(currentMA-5));
@@ -292,7 +401,7 @@
     if(e.key.toLowerCase()==='c'){connectBtn.click();}
   });
 
-  // 应用预设（仅快捷）
+  // presets apply
   function applyPreset(p){
     modeEl.value=p.mode; speedEl.value=p.speed; depthEl.value=p.depth; intEl.value=p.intensity;
     speedVal.textContent=p.speed; depthVal.textContent=p.depth; intVal.textContent=p.intensity;
@@ -304,75 +413,29 @@
     updateLive(); log('已应用预设：'+p.name);
   }
 
-  // ====== 外壁-内腔路径（固定拉长椭圆，底部开放，宽度随速度“轻呼吸”） ======
-  function roundedRectPath(x,y,w,h,r){
-    const x2=x+w, y2=y+h;
-    return [
-      `M ${x+r} ${y}`,
-      `H ${x2-r}`, `Q ${x2} ${y} ${x2} ${y+r}`,
-      `V ${y2-r}`, `Q ${x2} ${y2} ${x2-r} ${y2}`,
-      `H ${x+r}`, `Q ${x} ${y2} ${x} ${y2-r}`,
-      `V ${y+r}`, `Q ${x} ${y} ${x+r} ${y}`,
-      'Z'
-    ].join(' ');
-  }
-  function ellipsePath(cx,cy,rx,ry){
-    const p1 = `${(cx - rx).toFixed(2)} ${cy.toFixed(2)}`;
-    const p2 = `${(cx + rx).toFixed(2)} ${cy.toFixed(2)}`;
-    return `M ${p1} A ${rx} ${ry} 0 1 0 ${p2} A ${rx} ${ry} 0 1 0 ${p1} Z`;
-  }
-  function updateTissueEllipse(){
-    const outer = roundedRectPath(OUT_X, OUT_Y, OUT_W, OUT_H, OUT_R);
-
-    // 顶端接近上缘（留 6px），底部向下超出 14px → 与外壁相交形成开放口
-    const yTopTarget = OUT_Y + 6;
-    const yBottomTarget = OUT_Y + OUT_H + 14;
-    const cy = (yTopTarget + yBottomTarget) / 2;
-    const ry = (yBottomTarget - yTopTarget) / 2;
-
-    // 横向半轴基准：略宽于柱体；随速度 ±8% 轻呼吸
-    const baseRx = (P_W/2) + 6;
-    const spd = +speedEl.value || 50;
-    const factor = 1 + ((spd - 50) / 50) * 0.08;  // -8% … +8%
-    const rx = Math.max(10, Math.min(OUT_W * 0.48, baseRx * factor));
-
-    const inner = ellipsePath(VB_W/2, cy, rx, ry);
-    tissuePath.setAttribute('d', outer + ' ' + inner); // evenodd：外壁 - 内腔
-  }
-  updateTissueEllipse(); // 初始
-
-  // ====== 柱体运动（不影响内腔与中轴） ======
+  // motion + breathing
   function setPistonByNorm(norm){
-    const ny = clamp(norm, -1, 1);
+    const ny=clamp(norm,-1,1);
     const centerY = VB_H/2 - ny*TRAVEL;
     pistonGroup.setAttribute('transform', `translate(0, ${centerY - (P_H/2)})`);
   }
   setPistonByNorm(0);
 
-  // 运行/停止
-  startBtn.addEventListener('click', ()=>{
-    if(!isConnected){ log('无法开始：未连接设备。'); return; }
-    if(isRunning) return;
-    isRunning=true; startTime=performance.now(); log('任务开始 — 推进: '+modeEl.value);
-    tickHandle=requestAnimationFrame(tick);
-  });
-  stopBtn.addEventListener('click', stopRun);
-  function stopRun(){
-    if(!isRunning){ log('已停止。'); return; }
-    isRunning=false; if(tickHandle) cancelAnimationFrame(tickHandle); tickHandle=null;
-    setPistonByNorm(0);
-    clearScope(pctx,pulseCanvas); clearScope(sctx,suckCanvas);
-    log('任务结束');
-  }
+  // loops
+  function tick(nowMs){
+    const nowSec = nowMs/1000;
 
-  // 主循环
-  function tick(now){
-    if(!isRunning && !suckOn){ return; }
+    if(!isRunning && !suckOn){
+      // 仍需更新椭圆呼吸（慢速），避免完全停住时不呼吸
+      updateTissueEllipse(nowSec);
+      return requestAnimationFrame(tick);
+    }
+
     latencyEl.textContent = latency + ' ms';
 
-    // 推进位移（归一）
+    // 推进位移
     const depth=+depthEl.value, intensity=+intEl.value, speed=+speedEl.value;
-    const elapsed=(now - startTime)/1000, amp=map(depth,0,100,0,1);
+    const elapsed=(nowMs - startTime)/1000, amp=map(depth,0,100,0,1);
     let norm=0;
     if(modeEl.value==='wave'){
       const freq=map(speed,1,100,0.4,3.5); norm=Math.sin(elapsed*freq*Math.PI*2)*amp*(intensity/100);
@@ -382,8 +445,8 @@
     posSmooth = posSmooth + (norm - posSmooth)*0.18;
     setPistonByNorm(posSmooth);
 
-    // 速度可能在运行中改变 → 动态更新内腔横向半轴
-    updateTissueEllipse();
+    // 椭圆呼吸（频率由速度决定，慢）
+    updateTissueEllipse(nowSec);
 
     // 示波
     drawPulseStep(); drawSuckStep();
@@ -391,53 +454,24 @@
     tickHandle=requestAnimationFrame(tick);
   }
 
-  // 示波绘制
-  function grid(ctx,w,h){
-    ctx.clearRect(0,0,w,h);
-    ctx.strokeStyle='rgba(229,165,181,0.25)'; ctx.lineWidth=1;
-    for(let x=0;x<w;x+=28){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-    for(let y=0;y<h;y+=28){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-    ctx.strokeStyle='rgba(216,154,173,0.8)'; ctx.beginPath(); ctx.moveTo(0,h*0.75); ctx.lineTo(w,h*0.75); ctx.stroke();
+  startBtn.addEventListener('click', ()=>{
+    if(!isConnected){ log('无法开始：未连接设备。'); return; }
+    if(isRunning) return;
+    isRunning=true; startTime=performance.now(); log('任务开始 — 推进: '+modeEl.value);
+    tickHandle=requestAnimationFrame(tick);
+  });
+  function stopRun(){
+    if(!isRunning){ log('已停止。'); return; }
+    isRunning=false; if(tickHandle) cancelAnimationFrame(tickHandle); tickHandle=null;
+    setPistonByNorm(0);
+    clearScope(pctx,pulseCanvas); clearScope(sctx,suckCanvas);
+    log('任务结束');
   }
-  function clearScope(ctx,canvas){ grid(ctx,canvas.width,canvas.height); }
-  clearScope(pctx,pulseCanvas); clearScope(sctx,suckCanvas);
+  stopBtn.addEventListener('click', stopRun);
 
-  function drawPulseStep(){
-    const w=pulseCanvas.width, h=pulseCanvas.height;
-    const img=pctx.getImageData(2,0,w-2,h); pctx.putImageData(img,0,0);
-    pctx.clearRect(w-2,0,2,h);
-    pctx.strokeStyle='rgba(229,165,181,0.25)'; pctx.beginPath(); pctx.moveTo(w-2,0); pctx.lineTo(w-2,h); pctx.stroke();
-
-    const hz=map(+speedEl.value,1,100,0.5,10), duty=0.2;
-    const t=(performance.now()/1000)%1, phase=(t*hz)%1;
-    const high = isRunning && phase<duty;
-    const amp = currentMA/100, baseline=h*0.75, highY = baseline - amp*(h*0.6);
-    pctx.strokeStyle='rgba(229,165,181,0.95)'; pctx.lineWidth=2;
-    pctx.beginPath(); pctx.moveTo(w-2, high?highY:baseline); pctx.lineTo(w-2, baseline); pctx.stroke();
-  }
-
-  function drawSuckStep(){
-    const w=suckCanvas.width, h=suckCanvas.height;
-    const img=sctx.getImageData(2,0,w-2,h); sctx.putImageData(img,0,0);
-    sctx.clearRect(w-2,0,2,h);
-    sctx.strokeStyle='rgba(229,165,181,0.25)'; sctx.beginPath(); sctx.moveTo(w-2,0); sctx.lineTo(w-2,h); sctx.stroke();
-
-    const hz=map(+suckRateEl.value,1,100,0.5,8);
-    const t=(performance.now()/1000)%1, phase=(t*hz)%1;
-    const pattern=suckPatternEl.value;
-    let high=false; if(pattern==='continuous'){ high=suckOn; } else { high=suckOn && (phase<0.33); }
-    const amp=suckLevel/10, baseline=h*0.7, highY = baseline - amp*(h*0.55);
-    sctx.strokeStyle='rgba(216,154,173,0.95)'; sctx.lineWidth=2;
-    sctx.beginPath(); sctx.moveTo(w-2, high?highY:baseline); sctx.lineTo(w-2, baseline); sctx.stroke();
-  }
-
-  // 定时刷新文字 & 被动示波
-  setInterval(()=>{
-    speedVal.textContent=speedEl.value; depthVal.textContent=depthEl.value; intVal.textContent=intEl.value; updateLive();
-    if(!isRunning && suckOn){ tickHandle=requestAnimationFrame(tick); }
-  },120);
-
-  // 初始
+  // start
+  updateTissueEllipse(0);
+  requestAnimationFrame(tick);
   log('系统启动完成');
 })();
 </script>
