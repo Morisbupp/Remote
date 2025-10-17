@@ -35,16 +35,37 @@
     button.ghost:hover{background:rgba(229,165,181,0.1); border-color:rgba(229,165,181,0.5)}
     .small{font-size:12px; color:var(--muted)}
 
-    .vis{display:grid; grid-template-columns: 220px 1fr; gap:16px; min-height:360px}
+    .vis{display:grid; grid-template-columns: 240px 1fr; gap:16px; min-height:360px}
     .device{
-      width:100%; height:240px; border-radius:20px; background:linear-gradient(180deg,#faf7f9,#f5eff3);
-      display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 8px 20px rgba(229,165,181,0.15);
+      position:relative; width:100%; height:260px; border-radius:20px;
+      background:linear-gradient(180deg,#faf7f9,#f5eff3);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 20px rgba(229,165,181,0.15);
       border:1px solid rgba(229,165,181,0.2); overflow:hidden;
     }
+    .shaft{width:10px; height:210px; background:linear-gradient(180deg,#d4c5cc,#c4b5bc);
+      position:absolute; left:calc(50% - 5px); top:20px; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05)}
     .piston{ width:60px; height:140px; border-radius:999px; background:linear-gradient(180deg,#f0c5d1,#e5a5b5);
-      display:flex; align-items:center; justify-content:center; position:relative; transform-origin:center; box-shadow:0 4px 12px rgba(229,165,181,0.3)}
+      position:absolute; left:calc(50% - 30px); top:60px; transform-origin:center; box-shadow:0 4px 12px rgba(229,165,181,0.3) }
     .piston:after{content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:40px; height:20px; border-radius:10px; background:rgba(229,165,181,0.15)}
-    .shaft{width:10px; height:200px; background:linear-gradient(180deg,#d4c5cc,#c4b5bc); position:absolute; left:calc(50% - 5px); top:20px; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05)}
+
+    /* 外包裹（sheath + orifice） */
+    .sheath{
+      position:absolute; left:50%; top:62px; transform:translateX(-50%);
+      width:140px; height:140px; border-radius:50%;
+      background:radial-gradient(ellipse at center, rgba(229,165,181,0.25) 0%, rgba(229,165,181,0.15) 60%, rgba(229,165,181,0.1) 100%);
+      filter: blur(0.2px);
+      display:flex; align-items:center; justify-content:center;
+      pointer-events:none;
+    }
+    .orifice{
+      width:70px; height:46px; border-radius:60%/45%;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.0) 45%, rgba(229,165,181,0.30) 46%, rgba(229,165,181,0.18) 70%, rgba(229,165,181,0.08) 100%);
+      border:1px solid rgba(229,165,181,0.35);
+      box-shadow: inset 0 2px 8px rgba(229,165,181,0.25), 0 2px 6px rgba(229,165,181,0.12);
+      transition: width .12s ease, height .12s ease, border-radius .12s ease;
+    }
+
     .log{max-height:140px; overflow:auto; background:rgba(229,165,181,0.05); padding:10px; border-radius:8px; font-size:12px; color:var(--muted); border:1px solid rgba(229,165,181,0.1)}
 
     .flex{display:flex; gap:8px; align-items:center}
@@ -52,7 +73,7 @@
     .chip{padding:6px 8px; border-radius:999px; background:rgba(229,165,181,0.1); font-size:13px; cursor:pointer; border:1px solid rgba(229,165,181,0.2); transition:.2s}
     .chip:hover{background:rgba(229,165,181,0.2); border-color:rgba(229,165,181,0.4)}
     .badge{padding:4px 8px; border-radius:999px; background:rgba(229,165,181,0.12); border:1px solid rgba(229,165,181,0.25); font-size:12px; color:#5a4d54}
-    .hold{padding:10px 14px; border-radius:10px; border:1px solid rgba(229,165,181,0.35); background:rgba(229,165,181,0.12)}
+    .hold, .toggle{padding:10px 14px; border-radius:10px; border:1px solid rgba(229,165,181,0.35); background:rgba(229,165,181,0.12)}
     .block{background:rgba(255,255,255,0.6); border:1px solid rgba(229,165,181,0.25); border-radius:10px; padding:10px}
     canvas{border:1px solid rgba(229,165,181,0.3); border-radius:10px; background:linear-gradient(180deg,#fff, #fff7fa); width:100%}
     @media (max-width:1100px){ .panel{grid-template-columns:1fr} .vis{grid-template-columns:1fr} }
@@ -116,7 +137,7 @@
           <div class="badge">当前等级：<span id="suckLevelText">5</span>/10</div>
           <button id="suckDown" class="ghost">↓ 等级</button>
           <button id="suckUp" class="ghost">↑ 等级</button>
-          <button id="holdSuck" class="hold">按住吸</button>
+          <button id="toggleSuck" class="toggle">吮吸：关闭</button>
         </div>
       </div>
 
@@ -133,11 +154,14 @@
 
     <div class="right">
       <div class="vis" role="region" aria-label="设备与示波">
-        <!-- 左侧设备动画 -->
+        <!-- 左侧设备动画（含外包裹） -->
         <div>
           <div class="device">
+            <div class="sheath">
+              <div class="orifice" id="orifice"></div>
+            </div>
             <div class="shaft" aria-hidden="true"></div>
-            <div class="piston" id="piston" style="transform: translateY(0px)"></div>
+            <div class="piston" id="piston"></div>
           </div>
           <div class="small" style="margin-top:8px">网络延迟：<span id="latency" style="font-weight:700; color:#e5a5b5">0 ms</span></div>
         </div>
@@ -194,6 +218,7 @@
     const intVal = document.getElementById('intVal');
     const modeEl = document.getElementById('mode');
     const piston = document.getElementById('piston');
+    const orifice = document.getElementById('orifice');
     const logEl = document.getElementById('log');
     const liveParams = document.getElementById('liveParams');
     const latencyEl = document.getElementById('latency');
@@ -207,7 +232,7 @@
     const maText = document.getElementById('currentMA');
     const holdFireBtn = document.getElementById('holdFire');
 
-    // 吮吸画布与控件
+    // 吮吸画布与控件（开关）
     const suckCanvas = document.getElementById('suckCanvas');
     const sctx = suckCanvas.getContext('2d');
     const suckRateEl = document.getElementById('suckRate');
@@ -219,7 +244,7 @@
     const suckLevelBadge = document.getElementById('suckLevelBadge');
     const suckUpBtn = document.getElementById('suckUp');
     const suckDownBtn = document.getElementById('suckDown');
-    const holdSuckBtn = document.getElementById('holdSuck');
+    const toggleSuckBtn = document.getElementById('toggleSuck');
 
     // 快捷预设容器
     const quickChips = document.getElementById('quickChips');
@@ -229,17 +254,17 @@
     let currentMA = 40; // 0–100 mA
     let holdFire = false;
 
-    // 吮吸模块
+    // 吮吸模块（开关）
     let suckLevel = 5;      // 0–10
-    let holdSuck = false;   // 按住吸
+    let suckActive = false; // 开/关
+
     let presets = [
-      // 名称, 推进模式, speed, depth, intensity, currentMA, suckRate, suckPattern, suckLevel
-      {name:"柔和开启",   mode:"wave",  speed:30, depth:25, intensity:30, currentMA:20, suckRate:30, suckPattern:"continuous", suckLevel:3},
-      {name:"节律脉冲",   mode:"pulse", speed:65, depth:40, intensity:55, currentMA:45, suckRate:50, suckPattern:"pulse",      suckLevel:6},
-      {name:"深度推进",   mode:"wave",  speed:55, depth:80, intensity:70, currentMA:35, suckRate:40, suckPattern:"continuous", suckLevel:5},
-      {name:"快速脉冲",   mode:"pulse", speed:85, depth:50, intensity:80, currentMA:60, suckRate:70, suckPattern:"pulse",      suckLevel:7},
-      {name:"外吸主导",   mode:"wave",  speed:40, depth:30, intensity:40, currentMA:25, suckRate:80, suckPattern:"continuous", suckLevel:9},
-      {name:"低速耐久",   mode:"wave",  speed:20, depth:35, intensity:35, currentMA:15, suckRate:20, suckPattern:"continuous", suckLevel:2},
+      {name:"柔和开启",   mode:"wave",  speed:30, depth:25, intensity:30, currentMA:20, suckRate:30, suckPattern:"continuous", suckLevel:3, suckActive:true},
+      {name:"节律脉冲",   mode:"pulse", speed:65, depth:40, intensity:55, currentMA:45, suckRate:50, suckPattern:"pulse",      suckLevel:6, suckActive:true},
+      {name:"深度推进",   mode:"wave",  speed:55, depth:80, intensity:70, currentMA:35, suckRate:40, suckPattern:"continuous", suckLevel:5, suckActive:false},
+      {name:"快速脉冲",   mode:"pulse", speed:85, depth:50, intensity:80, currentMA:60, suckRate:70, suckPattern:"pulse",      suckLevel:7, suckActive:true},
+      {name:"外吸主导",   mode:"wave",  speed:40, depth:30, intensity:40, currentMA:25, suckRate:80, suckPattern:"continuous", suckLevel:9, suckActive:true},
+      {name:"低速耐久",   mode:"wave",  speed:20, depth:35, intensity:35, currentMA:15, suckRate:20, suckPattern:"continuous", suckLevel:2, suckActive:false},
     ];
 
     // —— 基础UI —— //
@@ -277,7 +302,9 @@
     function stopRun(){
       if(!isRunning){ log('已停止。'); return; }
       isRunning=false; if(tickHandle) cancelAnimationFrame(tickHandle); tickHandle=null;
-      piston.style.transform='translateY(0px)'; clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
+      piston.style.transform='translateY(0px)';
+      deformOrifice(0); // 回缩
+      clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
       log('任务结束');
     }
 
@@ -298,12 +325,13 @@
     ['mousedown','touchstart'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=true; log('按下放电'); }));
     ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=false; log('放电结束'); }));
 
-    // —— 吮吸控制 —— //
+    // —— 吮吸控制（开关） —— //
     function setSuckLevel(v){ suckLevel = Math.max(0, Math.min(10, Math.round(v))); suckLevelText.textContent=suckLevel; suckLevelBadge.textContent=suckLevel; }
     suckUpBtn.addEventListener('click', ()=> setSuckLevel(suckLevel+1));
     suckDownBtn.addEventListener('click', ()=> setSuckLevel(suckLevel-1));
     setSuckLevel(suckLevel);
 
+    // 速率/节律
     suckRateEl.addEventListener('input', ()=>{
       suckRateVal.textContent = suckRateEl.value;
       suckRateLabel.textContent = `${map(+suckRateEl.value,1,100,0.5,8).toFixed(1)} Hz`;
@@ -315,8 +343,14 @@
     });
     suckPatternEl.dispatchEvent(new Event('change'));
 
-    ['mousedown','touchstart'].forEach(evt=> holdSuckBtn.addEventListener(evt, ()=>{ holdSuck=true; log('按住吸'); }));
-    ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> holdSuckBtn.addEventListener(evt, ()=>{ holdSuck=false; log('结束吸'); }));
+    // 开关按钮
+    toggleSuckBtn.addEventListener('click', ()=>{
+      suckActive = !suckActive;
+      toggleSuckBtn.textContent = '吮吸：' + (suckActive ? '开启' : '关闭');
+      log('吮吸 ' + (suckActive ? '开启' : '关闭'));
+      // 若未运行但需要更新示波（比如仅吮吸开启），也刷新
+      if(!isRunning && suckActive){ requestAnimationFrame(tick); }
+    });
 
     // —— 预设与快捷 —— //
     function applyPreset(p){
@@ -326,9 +360,10 @@
       suckRateEl.value=p.suckRate; suckRateEl.dispatchEvent(new Event('input'));
       suckPatternEl.value=p.suckPattern; suckPatternEl.dispatchEvent(new Event('change'));
       setSuckLevel(p.suckLevel);
+      suckActive = !!p.suckActive;
+      toggleSuckBtn.textContent = '吮吸：' + (suckActive ? '开启' : '关闭');
       updateLiveParams(); log('已应用预设：'+p.name);
     }
-    // 左侧完整预设列表
     function renderPresets(){
       presetList.innerHTML='';
       presets.forEach(p=>{
@@ -337,7 +372,6 @@
       });
     }
     renderPresets();
-    // 右侧快捷
     function renderQuick(){
       quickChips.innerHTML='';
       presets.slice(0,4).forEach(p=>{
@@ -356,7 +390,7 @@
       ctx.strokeStyle='rgba(216,154,173,0.8)';
       ctx.beginPath(); ctx.moveTo(0, h*0.75); ctx.lineTo(w, h*0.75); ctx.stroke();
     }
-    function clearScope(ctx, canvas, full=false){ if(full){ drawGrid(ctx, canvas.width, canvas.height); } else { drawGrid(ctx, canvas.width, canvas.height); } }
+    function clearScope(ctx, canvas, full=false){ drawGrid(ctx, canvas.width, canvas.height); }
     clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
 
     function drawPulseStep(){
@@ -365,11 +399,11 @@
       const img = pctx.getImageData(2,0,w-2,h); pctx.putImageData(img,0,0);
       pctx.clearRect(w-2,0,2,h);
       pctx.strokeStyle='rgba(229,165,181,0.25)'; pctx.beginPath(); pctx.moveTo(w-2,0); pctx.lineTo(w-2,h); pctx.stroke();
-      // 计算高电平
+      // 高电平（放电）
       const speed=+speedEl.value, hz=map(speed,1,100,0.5,10), duty=0.2;
       const t=(performance.now()/1000)%1, phase=(t*hz)%1;
       const high = holdFire || (isRunning && phase < duty);
-      const amp = currentMA/100; // 0–1
+      const amp = currentMA/100;
       const baseline=h*0.75, highY = baseline - amp*(h*0.6);
       pctx.strokeStyle='rgba(229,165,181,0.95)'; pctx.lineWidth=2;
       pctx.beginPath(); const y1 = high ? highY : baseline; pctx.moveTo(w-2,y1); pctx.lineTo(w-2,baseline); pctx.stroke();
@@ -385,8 +419,8 @@
       const t=(performance.now()/1000)%1, phase=(t*hz)%1;
       const pattern = suckPatternEl.value; // continuous | pulse
       let high=false;
-      if(pattern==='continuous'){ high = isRunning || holdSuck; }
-      else { high = (isRunning || holdSuck) && (phase < 0.33); } // 33% 占空比脉冲
+      if(pattern==='continuous'){ high = suckActive; }
+      else { high = suckActive && (phase < 0.33); } // 33% 占空比
 
       const amp = suckLevel/10; // 0–1
       const baseline=h*0.7, highY = baseline - amp*(h*0.55);
@@ -395,9 +429,23 @@
       sctx.beginPath(); const y1 = high ? highY : baseline; sctx.moveTo(w-2,y1); sctx.lineTo(w-2,baseline); sctx.stroke();
     }
 
+    // —— 外包裹开口变形 —— //
+    // 根据柱体“推进量”让 orifice 椭圆在 [最小 -> 最大] 间插值，以模拟“被撑开/回缩”
+    function deformOrifice(amount){ // amount: 0..1
+      const minW=70, maxW=96;   // 横向开度
+      const minH=46, maxH=74;   // 纵向开度
+      const w = minW + (maxW-minW)*amount;
+      const h = minH + (maxH-minH)*amount;
+      orifice.style.width = w + 'px';
+      orifice.style.height = h + 'px';
+      // 椭圆的圆角与开度也做些许联动
+      const rx = 60 + 20*amount, ry = 45 + 15*amount;
+      orifice.style.borderRadius = `${rx}%/${ry}%`;
+    }
+
     // —— 主循环 —— //
     function tick(now){
-      if(!isRunning && !holdFire && !holdSuck){ return; }
+      if(!isRunning && !holdFire && !suckActive){ return; }
       latencyEl.textContent = latency + ' ms';
 
       // 设备推进（无随机）
@@ -412,22 +460,33 @@
       const cur=parseFloat(piston.dataset._smooth||0), smooth=cur+(pos-cur)*0.18;
       piston.dataset._smooth=smooth; piston.style.transform=`translateY(${-smooth}px)`; piston.dataset.pos=-smooth;
 
+      // 外包裹口部变形：用推进量绝对值映射到 0..1
+      const openAmount = Math.min(1, Math.abs(smooth)/80);
+      deformOrifice(openAmount);
+
       // 两路示波
-      drawPulseStep(); drawSuckStep();
+      if(isRunning || holdFire) drawPulseStep();
+      if(suckActive) drawSuckStep();
 
       tickHandle=requestAnimationFrame(tick);
     }
 
     function map(v,a,b,c,d){ return c + (d - c) * ((v - a) / (b - a)); }
 
-    // 定时刷新标签与按住状态时的示波
+    // 定时刷新标签与需要时的示波
     setInterval(()=>{
       speedVal.textContent=speedEl.value; depthVal.textContent=depthEl.value; intVal.textContent=intEl.value; updateLiveParams();
-      if(!isRunning && (holdFire || holdSuck)){ tickHandle=requestAnimationFrame(tick); }
+      if(!isRunning && (holdFire || suckActive)){ tickHandle=requestAnimationFrame(tick); }
     },120);
 
-    // 初始日志
+    // 初始
+    clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
+    deformOrifice(0);
     log('系统启动完成');
+    
+    // 放电（按住）
+    ['mousedown','touchstart'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=true; log('按下放电'); if(!isRunning) requestAnimationFrame(tick); }));
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=false; log('放电结束'); }));
   })();
   </script>
 </body>
