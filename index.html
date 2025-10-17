@@ -11,15 +11,13 @@
       font-family: Inter, "Helvetica Neue", Arial, sans-serif; color:#5a4d54;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0; background:linear-gradient(180deg,#f9f4f7 0%, #f5eff3 100%);
-      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:28px;
-    }
+    body{ margin:0; background:linear-gradient(180deg,#f9f4f7 0%, #f5eff3 100%);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:28px; }
     .panel{
-      width:980px; max-width:98vw; background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,245,250,0.9));
+      width:1100px; max-width:98vw; background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,245,250,0.9));
       border-radius:16px; padding:22px;
       box-shadow: 0 8px 30px rgba(157,139,148,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
-      display:grid; grid-template-columns: 380px 1fr; gap:18px; align-items:start;
+      display:grid; grid-template-columns: 410px 1fr; gap:18px; align-items:start;
     }
     .left,.right{background:var(--card); padding:16px; border-radius:12px; box-shadow:0 2px 12px rgba(229,165,181,0.08)}
     h1{margin:0 0 10px; font-size:18px; letter-spacing:.2px; color:var(--accent-dark); font-weight:600}
@@ -37,27 +35,27 @@
     button.ghost:hover{background:rgba(229,165,181,0.1); border-color:rgba(229,165,181,0.5)}
     .small{font-size:12px; color:var(--muted)}
 
-    .vis{height:300px; display:flex; align-items:center; justify-content:center; gap:20px}
+    .vis{display:grid; grid-template-columns: 220px 1fr; gap:16px; min-height:360px}
     .device{
-      width:180px; height:220px; border-radius:20px; background:linear-gradient(180deg,#faf7f9,#f5eff3);
+      width:100%; height:240px; border-radius:20px; background:linear-gradient(180deg,#faf7f9,#f5eff3);
       display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 8px 20px rgba(229,165,181,0.15);
       border:1px solid rgba(229,165,181,0.2); overflow:hidden;
     }
-    .piston{
-      width:60px; height:140px; border-radius:999px; background:linear-gradient(180deg,#f0c5d1,#e5a5b5);
-      display:flex; align-items:center; justify-content:center; position:relative; transform-origin:center; box-shadow:0 4px 12px rgba(229,165,181,0.3)
-    }
+    .piston{ width:60px; height:140px; border-radius:999px; background:linear-gradient(180deg,#f0c5d1,#e5a5b5);
+      display:flex; align-items:center; justify-content:center; position:relative; transform-origin:center; box-shadow:0 4px 12px rgba(229,165,181,0.3)}
     .piston:after{content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:40px; height:20px; border-radius:10px; background:rgba(229,165,181,0.15)}
-    .shaft{width:10px; height:180px; background:linear-gradient(180deg,#d4c5cc,#c4b5bc); position:absolute; left:calc(50% - 5px); top:20px; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05)}
-    .log{max-height:120px; overflow:auto; background:rgba(229,165,181,0.05); padding:10px; border-radius:8px; font-size:12px; color:var(--muted); border:1px solid rgba(229,165,181,0.1)}
+    .shaft{width:10px; height:200px; background:linear-gradient(180deg,#d4c5cc,#c4b5bc); position:absolute; left:calc(50% - 5px); top:20px; border-radius:6px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05)}
+    .log{max-height:140px; overflow:auto; background:rgba(229,165,181,0.05); padding:10px; border-radius:8px; font-size:12px; color:var(--muted); border:1px solid rgba(229,165,181,0.1)}
+
     .flex{display:flex; gap:8px; align-items:center}
     .preset-list{display:flex; gap:8px; flex-wrap:wrap}
     .chip{padding:6px 8px; border-radius:999px; background:rgba(229,165,181,0.1); font-size:13px; cursor:pointer; border:1px solid rgba(229,165,181,0.2); transition:.2s}
     .chip:hover{background:rgba(229,165,181,0.2); border-color:rgba(229,165,181,0.4)}
-    .pulse-controls{display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:6px}
     .badge{padding:4px 8px; border-radius:999px; background:rgba(229,165,181,0.12); border:1px solid rgba(229,165,181,0.25); font-size:12px; color:#5a4d54}
     .hold{padding:10px 14px; border-radius:10px; border:1px solid rgba(229,165,181,0.35); background:rgba(229,165,181,0.12)}
-    @media (max-width:920px){ .panel{grid-template-columns:1fr} .left{order:2} .right{order:1} .vis{height:220px} }
+    .block{background:rgba(255,255,255,0.6); border:1px solid rgba(229,165,181,0.25); border-radius:10px; padding:10px}
+    canvas{border:1px solid rgba(229,165,181,0.3); border-radius:10px; background:linear-gradient(180deg,#fff, #fff7fa); width:100%}
+    @media (max-width:1100px){ .panel{grid-template-columns:1fr} .vis{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -79,13 +77,11 @@
       </div>
 
       <div class="row">
-        <label>模式</label>
+        <label>推进模式</label>
         <div class="control">
-          <select id="mode" aria-label="选择控制模式">
-            <option value="wave">波形（Wave）</option>
-            <option value="pulse">脉冲（Pulse）</option>
-            <option value="random">随机（Random）</option>
-            <option value="manual">手动（Manual）</option>
+          <select id="mode" aria-label="推进模式">
+            <option value="wave">波形推进</option>
+            <option value="pulse">脉冲推进</option>
           </select>
           <div style="flex:1"></div>
           <button id="startBtn" class="primary">开始</button>
@@ -104,27 +100,29 @@
       </div>
 
       <div class="row">
-        <label>力度/强度（Intensity） <span id="intVal" class="small" style="margin-left:8px">50</span></label>
+        <label>机械强度（Intensity） <span id="intVal" class="small" style="margin-left:8px">50</span></label>
         <input id="intensity" type="range" min="0" max="100" value="50" />
       </div>
 
-      <div class="row">
-        <label>手动控制（Manual）</label>
-        <div class="control">
-          <button id="stepIn" class="ghost">向里一步</button>
-          <button id="stepOut" class="ghost">向外一步</button>
-          <input id="manualStep" type="number" value="5" min="1" max="50" style="width:84px" />
+      <div class="row block">
+        <label>吮吸速率（Suction Rate） <span id="suckRateVal" class="small" style="margin-left:8px">50</span></label>
+        <input id="suckRate" type="range" min="1" max="100" value="50" />
+        <div class="control" style="margin-top:8px">
+          <label class="small">节律</label>
+          <select id="suckPattern" aria-label="吮吸节律">
+            <option value="continuous">连续</option>
+            <option value="pulse">脉冲</option>
+          </select>
+          <div class="badge">当前等级：<span id="suckLevelText">5</span>/10</div>
+          <button id="suckDown" class="ghost">↓ 等级</button>
+          <button id="suckUp" class="ghost">↑ 等级</button>
+          <button id="holdSuck" class="hold">按住吸</button>
         </div>
       </div>
 
       <div class="row">
         <label>预设</label>
         <div class="preset-list" id="presetList" aria-live="polite"></div>
-        <div style="margin-top:10px;" class="control">
-          <input id="presetName" type="text" placeholder="预设名称" aria-label="预设名称输入"/>
-          <button id="savePreset" class="ghost">保存预设</button>
-          <button id="exportPresets" class="ghost">导出 JSON</button>
-        </div>
       </div>
 
       <div class="row">
@@ -134,338 +132,303 @@
     </div>
 
     <div class="right">
-      <div class="vis" role="region" aria-label="设备与脉冲监视">
-        <!-- 设备动画 -->
-        <div class="device" id="device">
-          <div class="shaft" aria-hidden="true"></div>
-          <div class="piston" id="piston" style="transform: translateY(0px)"></div>
+      <div class="vis" role="region" aria-label="设备与示波">
+        <!-- 左侧设备动画 -->
+        <div>
+          <div class="device">
+            <div class="shaft" aria-hidden="true"></div>
+            <div class="piston" id="piston" style="transform: translateY(0px)"></div>
+          </div>
+          <div class="small" style="margin-top:8px">网络延迟：<span id="latency" style="font-weight:700; color:#e5a5b5">0 ms</span></div>
         </div>
 
-        <!-- 脉冲电流强度控制 + 画布 -->
-        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center">
-            <div>
-              <div style="font-size:14px; font-weight:600; color:#5a4d54">脉冲电流强度</div>
-              <div class="small" id="liveParams">模式：— · 速度：— · 深度：— · 强度：—</div>
+        <!-- 右侧：两路示波与控制（电流/吮吸） -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="block">
+            <div class="flex" style="justify-content:space-between; margin-bottom:8px">
+              <div>
+                <div style="font-size:14px; font-weight:600">入体电流（mA）</div>
+                <div class="small" id="liveParams">推进：— · 速度：— · 深度：— · 机械强度：—</div>
+              </div>
+              <div class="badge">当前电流：<span id="currentMA">40</span> mA</div>
             </div>
-            <div style="text-align:right">
-              <div class="small">网络延迟</div>
-              <div id="latency" style="font-size:13px; font-weight:700; color:#e5a5b5">0 ms</div>
-            </div>
-          </div>
-
-          <!-- 画布示波 -->
-          <canvas id="pulseCanvas" width="420" height="140" style="width:100%; height:160px; border:1px solid rgba(229,165,181,0.3); border-radius:10px; background:linear-gradient(180deg,#fff, #fff7fa)"></canvas>
-
-          <!-- 强度与放电控制 -->
-          <div class="pulse-controls">
-            <div class="badge">当前强度：<span id="currentLevel">40</span>%</div>
-            <div class="flex">
-              <button id="levelDown" class="ghost" aria-label="降低强度">↓ 强度</button>
-              <button id="levelUp" class="ghost" aria-label="提高强度">↑ 强度</button>
-              <button id="holdFire" class="hold" aria-label="按住放电">按住放电</button>
+            <canvas id="pulseCanvas" width="500" height="140"></canvas>
+            <div class="flex" style="margin-top:8px; justify-content:flex-end">
+              <button id="maDown" class="ghost">↓ 电流</button>
+              <button id="maUp" class="ghost">↑ 电流</button>
+              <button id="holdFire" class="hold">按住放电</button>
             </div>
           </div>
 
-          <!-- 快捷预设（保留） -->
+          <div class="block">
+            <div class="flex" style="justify-content:space-between; margin-bottom:8px">
+              <div>
+                <div style="font-size:14px; font-weight:600">体外吮吸（等级）</div>
+                <div class="small">节律：<span id="suckPatternLabel">连续</span> · 速率：<span id="suckRateLabel">—</span></div>
+              </div>
+              <div class="badge">当前等级：<span id="suckLevelBadge">5</span>/10</div>
+            </div>
+            <canvas id="suckCanvas" width="500" height="120"></canvas>
+          </div>
+
           <div>
-            <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:#5a4d54">快捷</div>
-            <div class="flex">
-              <button class="chip" data-preset='{"name":"Gentle Wave","mode":"wave","speed":35,"depth":30,"intensity":30}'>Gentle Wave</button>
-              <button class="chip" data-preset='{"name":"Fast Pulse","mode":"pulse","speed":85,"depth":50,"intensity":70}'>Fast Pulse</button>
-              <button class="chip" data-preset='{"name":"Deep Strong","mode":"wave","speed":60,"depth":90,"intensity":90}'>Deep Strong</button>
-            </div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:#5a4d54">快捷预设</div>
+            <div class="flex" id="quickChips"></div>
           </div>
-
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    (function(){
-      const connectBtn = document.getElementById('connectBtn');
-      const status = document.getElementById('status');
-      const startBtn = document.getElementById('startBtn');
-      const stopBtn = document.getElementById('stopBtn');
-      const speedEl = document.getElementById('speed');
-      const depthEl = document.getElementById('depth');
-      const intEl = document.getElementById('intensity');
-      const speedVal = document.getElementById('speedVal');
-      const depthVal = document.getElementById('depthVal');
-      const intVal = document.getElementById('intVal');
-      const modeEl = document.getElementById('mode');
-      const piston = document.getElementById('piston');
-      const logEl = document.getElementById('log');
-      const liveParams = document.getElementById('liveParams');
-      const latencyEl = document.getElementById('latency');
-      const presetList = document.getElementById('presetList');
-      const savePresetBtn = document.getElementById('savePreset');
-      const presetNameInput = document.getElementById('presetName');
-      const exportPresetsBtn = document.getElementById('exportPresets');
-      const chips = document.querySelectorAll('.chip');
+  (function(){
+    const connectBtn = document.getElementById('connectBtn');
+    const status = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const speedEl = document.getElementById('speed');
+    const depthEl = document.getElementById('depth');
+    const intEl = document.getElementById('intensity');
+    const speedVal = document.getElementById('speedVal');
+    const depthVal = document.getElementById('depthVal');
+    const intVal = document.getElementById('intVal');
+    const modeEl = document.getElementById('mode');
+    const piston = document.getElementById('piston');
+    const logEl = document.getElementById('log');
+    const liveParams = document.getElementById('liveParams');
+    const latencyEl = document.getElementById('latency');
+    const presetList = document.getElementById('presetList');
 
-      // 新增：脉冲强度/画布/放电
-      const canvas = document.getElementById('pulseCanvas');
-      const ctx = canvas.getContext('2d');
-      const levelUpBtn = document.getElementById('levelUp');
-      const levelDownBtn = document.getElementById('levelDown');
-      const levelText = document.getElementById('currentLevel');
-      const holdFireBtn = document.getElementById('holdFire');
+    // 电流画布
+    const pulseCanvas = document.getElementById('pulseCanvas');
+    const pctx = pulseCanvas.getContext('2d');
+    const maUpBtn = document.getElementById('maUp');
+    const maDownBtn = document.getElementById('maDown');
+    const maText = document.getElementById('currentMA');
+    const holdFireBtn = document.getElementById('holdFire');
 
-      let isConnected = false;
-      let isRunning = false;
-      let tickHandle = null;
-      let startTime = 0;
-      let latency = 0;
-      let presets = [];
-      let currentLevel = 40;      // 0-100%
-      let holdFire = false;       // 按住放电
-      let scopeX = 0;             // 画布绘制位置
+    // 吮吸画布与控件
+    const suckCanvas = document.getElementById('suckCanvas');
+    const sctx = suckCanvas.getContext('2d');
+    const suckRateEl = document.getElementById('suckRate');
+    const suckRateVal = document.getElementById('suckRateVal');
+    const suckRateLabel = document.getElementById('suckRateLabel');
+    const suckPatternEl = document.getElementById('suckPattern');
+    const suckPatternLabel = document.getElementById('suckPatternLabel');
+    const suckLevelText = document.getElementById('suckLevelText');
+    const suckLevelBadge = document.getElementById('suckLevelBadge');
+    const suckUpBtn = document.getElementById('suckUp');
+    const suckDownBtn = document.getElementById('suckDown');
+    const holdSuckBtn = document.getElementById('holdSuck');
 
-      function log(msg){
-        const t = new Date().toLocaleTimeString();
-        logEl.innerHTML = `<div>[${t}] ${escapeHtml(msg)}</div>` + logEl.innerHTML;
+    // 快捷预设容器
+    const quickChips = document.getElementById('quickChips');
+
+    let isConnected=false, isRunning=false, tickHandle=null, startTime=0, latency=0;
+    // 入体电流（mA）与放电
+    let currentMA = 40; // 0–100 mA
+    let holdFire = false;
+
+    // 吮吸模块
+    let suckLevel = 5;      // 0–10
+    let holdSuck = false;   // 按住吸
+    let presets = [
+      // 名称, 推进模式, speed, depth, intensity, currentMA, suckRate, suckPattern, suckLevel
+      {name:"柔和开启",   mode:"wave",  speed:30, depth:25, intensity:30, currentMA:20, suckRate:30, suckPattern:"continuous", suckLevel:3},
+      {name:"节律脉冲",   mode:"pulse", speed:65, depth:40, intensity:55, currentMA:45, suckRate:50, suckPattern:"pulse",      suckLevel:6},
+      {name:"深度推进",   mode:"wave",  speed:55, depth:80, intensity:70, currentMA:35, suckRate:40, suckPattern:"continuous", suckLevel:5},
+      {name:"快速脉冲",   mode:"pulse", speed:85, depth:50, intensity:80, currentMA:60, suckRate:70, suckPattern:"pulse",      suckLevel:7},
+      {name:"外吸主导",   mode:"wave",  speed:40, depth:30, intensity:40, currentMA:25, suckRate:80, suckPattern:"continuous", suckLevel:9},
+      {name:"低速耐久",   mode:"wave",  speed:20, depth:35, intensity:35, currentMA:15, suckRate:20, suckPattern:"continuous", suckLevel:2},
+    ];
+
+    // —— 基础UI —— //
+    function log(msg){ const t=new Date().toLocaleTimeString(); logEl.innerHTML = `<div>[${t}] ${escapeHtml(msg)}</div>`+logEl.innerHTML; }
+    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    connectBtn.addEventListener('click', ()=>{
+      if(!isConnected){
+        connectBtn.textContent='Connecting…'; status.textContent='Linking';
+        latency = Math.floor(Math.random()*400)+50; latencyEl.textContent = latency + ' ms';
+        setTimeout(()=>{ isConnected=true; connectBtn.textContent='Disconnect'; status.textContent='Connected'; log('连接已建立 · 往返延迟 '+latency+' ms'); }, latency+300);
+      }else{
+        isConnected=false; connectBtn.textContent='Connect'; status.textContent='Ready'; latency=0; latencyEl.textContent='0 ms';
+        stopRun(); log('连接已断开');
       }
-      function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    });
 
-      function renderPresets(){
-        presetList.innerHTML = '';
-        presets.forEach((p, i) => {
-          const btn = document.createElement('button'); btn.className='chip'; btn.textContent = p.name || ('preset-'+(i+1));
-          btn.onclick = ()=> applyPreset(p);
-          const del = document.createElement('button'); del.className='chip'; del.textContent='删除'; del.style.background='transparent';
-          del.onclick = (e)=>{ e.stopPropagation(); presets.splice(i,1); renderPresets(); };
-          const wrap = document.createElement('div'); wrap.style.display='inline-flex'; wrap.style.gap='6px'; wrap.style.alignItems='center';
-          wrap.appendChild(btn); wrap.appendChild(del); presetList.appendChild(wrap);
-        });
-      }
-      renderPresets();
+    function updateLiveParams(){
+      liveParams.textContent = `推进：${modeEl.value} · 速度：${speedEl.value} · 深度：${depthEl.value} · 机械强度：${intEl.value}`;
+    }
+    [speedEl,depthEl,intEl,modeEl].forEach(el=> el.addEventListener('input', updateLiveParams));
+    updateLiveParams();
 
-      // —— 连接按钮 —— 
-      connectBtn.addEventListener('click', ()=>{
-        if(!isConnected){
-          connectBtn.textContent='Connecting…';
-          status.textContent='Linking';
-          latency = Math.floor(Math.random()*400)+50;
-          latencyEl.textContent = latency + ' ms';
-          setTimeout(()=> {
-            isConnected = true;
-            connectBtn.textContent='Disconnect';
-            status.textContent='Connected';
-            log('连接已建立 · 往返延迟 ' + latency + ' ms');
-          }, latency + 300);
-        } else {
-          isConnected = false;
-          connectBtn.textContent='Connect';
-          status.textContent='Ready';
-          latency = 0; latencyEl.textContent = '0 ms';
-          stopRun();
-          log('连接已断开');
-        }
+    speedEl.addEventListener('input', ()=> speedVal.textContent=speedEl.value);
+    depthEl.addEventListener('input', ()=> depthVal.textContent=depthEl.value);
+    intEl.addEventListener('input',   ()=> intVal.textContent=intEl.value);
+
+    startBtn.addEventListener('click', ()=>{
+      if(!isConnected){ log('无法开始：未连接设备。'); return; }
+      if(isRunning) return;
+      isRunning=true; startTime=performance.now(); log('任务开始 — 推进: '+modeEl.value);
+      tickHandle=requestAnimationFrame(tick);
+    });
+    stopBtn.addEventListener('click', stopRun);
+    function stopRun(){
+      if(!isRunning){ log('已停止。'); return; }
+      isRunning=false; if(tickHandle) cancelAnimationFrame(tickHandle); tickHandle=null;
+      piston.style.transform='translateY(0px)'; clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
+      log('任务结束');
+    }
+
+    // —— 入体电流（mA） —— //
+    function setMA(v){ currentMA = Math.max(0, Math.min(100, Math.round(v))); maText.textContent=currentMA; }
+    maUpBtn.addEventListener('click', ()=> setMA(currentMA+5));
+    maDownBtn.addEventListener('click', ()=> setMA(currentMA-5));
+    setMA(currentMA);
+
+    // 键盘：↑/↓ 调mA；Space 开始/停止；C 切连接
+    window.addEventListener('keydown', (e)=>{
+      if(e.key==='ArrowUp'){ e.preventDefault(); setMA(currentMA+1); }
+      if(e.key==='ArrowDown'){ e.preventDefault(); setMA(currentMA-1); }
+      if(e.key===' '){ e.preventDefault(); if(isRunning) stopRun(); else startBtn.click(); }
+      if(e.key.toLowerCase()==='c'){ connectBtn.click(); }
+    });
+
+    ['mousedown','touchstart'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=true; log('按下放电'); }));
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> holdFireBtn.addEventListener(evt, ()=>{ holdFire=false; log('放电结束'); }));
+
+    // —— 吮吸控制 —— //
+    function setSuckLevel(v){ suckLevel = Math.max(0, Math.min(10, Math.round(v))); suckLevelText.textContent=suckLevel; suckLevelBadge.textContent=suckLevel; }
+    suckUpBtn.addEventListener('click', ()=> setSuckLevel(suckLevel+1));
+    suckDownBtn.addEventListener('click', ()=> setSuckLevel(suckLevel-1));
+    setSuckLevel(suckLevel);
+
+    suckRateEl.addEventListener('input', ()=>{
+      suckRateVal.textContent = suckRateEl.value;
+      suckRateLabel.textContent = `${map(+suckRateEl.value,1,100,0.5,8).toFixed(1)} Hz`;
+    });
+    suckRateEl.dispatchEvent(new Event('input'));
+
+    suckPatternEl.addEventListener('change', ()=>{
+      suckPatternLabel.textContent = suckPatternEl.value==='continuous'?'连续':'脉冲';
+    });
+    suckPatternEl.dispatchEvent(new Event('change'));
+
+    ['mousedown','touchstart'].forEach(evt=> holdSuckBtn.addEventListener(evt, ()=>{ holdSuck=true; log('按住吸'); }));
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> holdSuckBtn.addEventListener(evt, ()=>{ holdSuck=false; log('结束吸'); }));
+
+    // —— 预设与快捷 —— //
+    function applyPreset(p){
+      modeEl.value=p.mode; speedEl.value=p.speed; depthEl.value=p.depth; intEl.value=p.intensity;
+      speedVal.textContent=p.speed; depthVal.textContent=p.depth; intVal.textContent=p.intensity;
+      setMA(p.currentMA);
+      suckRateEl.value=p.suckRate; suckRateEl.dispatchEvent(new Event('input'));
+      suckPatternEl.value=p.suckPattern; suckPatternEl.dispatchEvent(new Event('change'));
+      setSuckLevel(p.suckLevel);
+      updateLiveParams(); log('已应用预设：'+p.name);
+    }
+    // 左侧完整预设列表
+    function renderPresets(){
+      presetList.innerHTML='';
+      presets.forEach(p=>{
+        const b=document.createElement('button'); b.className='chip'; b.textContent=p.name; b.addEventListener('click',()=>applyPreset(p));
+        presetList.appendChild(b);
       });
-
-      // —— 常规参数联动 —— 
-      speedEl.addEventListener('input', ()=> { speedVal.textContent = speedEl.value; updateLiveParams(); });
-      depthEl.addEventListener('input', ()=> { depthVal.textContent = depthEl.value; updateLiveParams(); });
-      intEl.addEventListener('input', ()=> { intVal.textContent = intEl.value; updateLiveParams(); });
-      modeEl.addEventListener('change', updateLiveParams);
-      function updateLiveParams(){
-        liveParams.textContent = `模式：${modeEl.value} · 速度：${speedEl.value} · 深度：${depthEl.value} · 强度：${intEl.value}`;
-      }
-      updateLiveParams();
-
-      // —— 运行/停止 —— 
-      startBtn.addEventListener('click', ()=>{
-        if(!isConnected){ log('无法开始：未连接设备。'); return; }
-        if(isRunning) return;
-        isRunning = true; startTime = performance.now();
-        log('任务开始 — 模式: ' + modeEl.value);
-        tickHandle = requestAnimationFrame(tick);
+    }
+    renderPresets();
+    // 右侧快捷
+    function renderQuick(){
+      quickChips.innerHTML='';
+      presets.slice(0,4).forEach(p=>{
+        const b=document.createElement('button'); b.className='chip'; b.textContent=p.name; b.addEventListener('click',()=>applyPreset(p));
+        quickChips.appendChild(b);
       });
-      stopBtn.addEventListener('click', ()=> stopRun());
-      function stopRun(){
-        if(!isRunning){ log('已停止。'); return; }
-        isRunning = false;
-        if(tickHandle) cancelAnimationFrame(tickHandle);
-        tickHandle = null;
-        piston.style.transform = `translateY(0px)`;
-        clearScope(true);
-        log('任务结束');
+    }
+    renderQuick();
+
+    // —— 示波绘制 —— //
+    function drawGrid(ctx, w, h){
+      ctx.clearRect(0,0,w,h);
+      ctx.strokeStyle='rgba(229,165,181,0.25)'; ctx.lineWidth=1;
+      for(let x=0;x<w;x+=28){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+      for(let y=0;y<h;y+=28){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+      ctx.strokeStyle='rgba(216,154,173,0.8)';
+      ctx.beginPath(); ctx.moveTo(0, h*0.75); ctx.lineTo(w, h*0.75); ctx.stroke();
+    }
+    function clearScope(ctx, canvas, full=false){ if(full){ drawGrid(ctx, canvas.width, canvas.height); } else { drawGrid(ctx, canvas.width, canvas.height); } }
+    clearScope(pctx,pulseCanvas,true); clearScope(sctx,suckCanvas,true);
+
+    function drawPulseStep(){
+      const w=pulseCanvas.width, h=pulseCanvas.height;
+      // 左移
+      const img = pctx.getImageData(2,0,w-2,h); pctx.putImageData(img,0,0);
+      pctx.clearRect(w-2,0,2,h);
+      pctx.strokeStyle='rgba(229,165,181,0.25)'; pctx.beginPath(); pctx.moveTo(w-2,0); pctx.lineTo(w-2,h); pctx.stroke();
+      // 计算高电平
+      const speed=+speedEl.value, hz=map(speed,1,100,0.5,10), duty=0.2;
+      const t=(performance.now()/1000)%1, phase=(t*hz)%1;
+      const high = holdFire || (isRunning && phase < duty);
+      const amp = currentMA/100; // 0–1
+      const baseline=h*0.75, highY = baseline - amp*(h*0.6);
+      pctx.strokeStyle='rgba(229,165,181,0.95)'; pctx.lineWidth=2;
+      pctx.beginPath(); const y1 = high ? highY : baseline; pctx.moveTo(w-2,y1); pctx.lineTo(w-2,baseline); pctx.stroke();
+    }
+
+    function drawSuckStep(){
+      const w=suckCanvas.width, h=suckCanvas.height;
+      const img = sctx.getImageData(2,0,w-2,h); sctx.putImageData(img,0,0);
+      sctx.clearRect(w-2,0,2,h);
+      sctx.strokeStyle='rgba(229,165,181,0.25)'; sctx.beginPath(); sctx.moveTo(w-2,0); sctx.lineTo(w-2,h); sctx.stroke();
+
+      const rate=+suckRateEl.value, hz=map(rate,1,100,0.5,8);
+      const t=(performance.now()/1000)%1, phase=(t*hz)%1;
+      const pattern = suckPatternEl.value; // continuous | pulse
+      let high=false;
+      if(pattern==='continuous'){ high = isRunning || holdSuck; }
+      else { high = (isRunning || holdSuck) && (phase < 0.33); } // 33% 占空比脉冲
+
+      const amp = suckLevel/10; // 0–1
+      const baseline=h*0.7, highY = baseline - amp*(h*0.55);
+
+      sctx.strokeStyle='rgba(216,154,173,0.95)'; sctx.lineWidth=2;
+      sctx.beginPath(); const y1 = high ? highY : baseline; sctx.moveTo(w-2,y1); sctx.lineTo(w-2,baseline); sctx.stroke();
+    }
+
+    // —— 主循环 —— //
+    function tick(now){
+      if(!isRunning && !holdFire && !holdSuck){ return; }
+      latencyEl.textContent = latency + ' ms';
+
+      // 设备推进（无随机）
+      const depth=+depthEl.value, intensity=+intEl.value, speed=+speedEl.value;
+      const elapsed=(now - startTime)/1000, basePx=map(depth,0,100,0,80);
+      let pos=0;
+      if(modeEl.value==='wave'){
+        const freq=map(speed,1,100,0.4,3.5); pos=Math.sin(elapsed*freq*Math.PI*2)*basePx*(intensity/100);
+      }else{ // pulse
+        const rate=map(speed,1,100,0.5,10), phase=(elapsed*rate)%1; pos=(phase<0.15)? basePx*(intensity/100):0;
       }
+      const cur=parseFloat(piston.dataset._smooth||0), smooth=cur+(pos-cur)*0.18;
+      piston.dataset._smooth=smooth; piston.style.transform=`translateY(${-smooth}px)`; piston.dataset.pos=-smooth;
 
-      // —— 手动位移 —— 
-      document.getElementById('stepIn').addEventListener('click', ()=>{
-        if(modeEl.value !== 'manual'){ log('手动模式未启用'); return; }
-        const step = parseFloat(document.getElementById('manualStep').value) || 5;
-        doManualStep(-step);
-      });
-      document.getElementById('stepOut').addEventListener('click', ()=>{
-        if(modeEl.value !== 'manual'){ log('手动模式未启用'); return; }
-        const step = parseFloat(document.getElementById('manualStep').value) || 5;
-        doManualStep(step);
-      });
-      function doManualStep(delta){
-        const cur = parseFloat(piston.dataset.pos || 0);
-        const next = Math.max(-100, Math.min(100, cur + delta));
-        piston.dataset.pos = next;
-        piston.style.transform = `translateY(${next}px)`;
-        log(`手动移动 ${delta>0 ? '向外' : '向内'} ${Math.abs(delta)} 单位`);
-      }
+      // 两路示波
+      drawPulseStep(); drawSuckStep();
 
-      // —— 预设 —— 
-      savePresetBtn.addEventListener('click', ()=>{
-        const name = presetNameInput.value.trim() || ('Preset ' + (presets.length+1));
-        const p = { name, mode: modeEl.value, speed: +speedEl.value, depth: +depthEl.value, intensity: +intEl.value, created: (new Date()).toISOString() };
-        presets.push(p); renderPresets(); log('已保存预设：' + name); presetNameInput.value='';
-      });
-      exportPresetsBtn.addEventListener('click', ()=>{
-        const data = JSON.stringify(presets, null, 2);
-        const blob = new Blob([data], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'presets.json'; a.click();
-        URL.revokeObjectURL(url); log('预设已导出');
-      });
-      chips.forEach(c => c.addEventListener('click', ()=> { const data = JSON.parse(c.getAttribute('data-preset')); applyPreset(data); log('已应用预设：' + (data.name || 'Unnamed')); }));
-      function applyPreset(p){
-        modeEl.value = p.mode || 'wave';
-        speedEl.value = p.speed || 50; speedVal.textContent = speedEl.value;
-        depthEl.value = p.depth || 50; depthVal.textContent = depthEl.value;
-        intEl.value = p.intensity || 50; intVal.textContent = intEl.value;
-        updateLiveParams();
-      }
+      tickHandle=requestAnimationFrame(tick);
+    }
 
-      // —— 脉冲强度控制（无随机）——
-      function setLevel(v){
-        currentLevel = Math.max(0, Math.min(100, Math.round(v)));
-        levelText.textContent = currentLevel;
-      }
-      levelUpBtn.addEventListener('click', ()=> setLevel(currentLevel + 5));
-      levelDownBtn.addEventListener('click', ()=> setLevel(currentLevel - 5));
-      setLevel(currentLevel);
+    function map(v,a,b,c,d){ return c + (d - c) * ((v - a) / (b - a)); }
 
-      // 支持键盘 ↑/↓ 调整强度；Space 仍控制开始/停止；C 切连接
-      window.addEventListener('keydown', (e)=>{
-        if(e.key === 'ArrowUp'){ e.preventDefault(); setLevel(currentLevel + 1); }
-        if(e.key === 'ArrowDown'){ e.preventDefault(); setLevel(currentLevel - 1); }
-        if(e.key === ' ') { e.preventDefault(); if(isRunning) stopRun(); else startBtn.click(); }
-        if(e.key.toLowerCase() === 'c') connectBtn.click();
-      });
+    // 定时刷新标签与按住状态时的示波
+    setInterval(()=>{
+      speedVal.textContent=speedEl.value; depthVal.textContent=depthEl.value; intVal.textContent=intEl.value; updateLiveParams();
+      if(!isRunning && (holdFire || holdSuck)){ tickHandle=requestAnimationFrame(tick); }
+    },120);
 
-      // 按住放电（鼠标与触摸）
-      ['mousedown','touchstart'].forEach(evt => holdFireBtn.addEventListener(evt, ()=> { holdFire = true; log('按下放电'); }));
-      ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt => holdFireBtn.addEventListener(evt, ()=> { holdFire = false; log('放电结束'); }));
-
-      // —— 画布：脉冲示波 —— 
-      function clearScope(full=false){
-        if(full){ ctx.clearRect(0,0,canvas.width,canvas.height); scopeX = 0; drawGrid(); return; }
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        drawGrid();
-      }
-      function drawGrid(){
-        const w=canvas.width, h=canvas.height;
-        // 背景已由CSS设置，这里画网格和中线
-        ctx.strokeStyle = 'rgba(229,165,181,0.25)';
-        ctx.lineWidth = 1;
-        for(let x=0; x<w; x+=28){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-        for(let y=0; y<h; y+=28){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-        // 参考中线
-        ctx.strokeStyle = 'rgba(216,154,173,0.8)';
-        ctx.beginPath(); ctx.moveTo(0, h*0.75); ctx.lineTo(w, h*0.75); ctx.stroke();
-      }
-      clearScope(true);
-
-      // 单步绘制一个脉冲列（根据速度/强度，无随机）
-      function drawPulseStep(dt){
-        const w=canvas.width, h=canvas.height;
-        // 将画面整体向左卷动
-        const img = ctx.getImageData(2,0,w-2,h);
-        ctx.putImageData(img,0,0);
-        ctx.clearRect(w-2,0,2,h);
-        // 右侧重画网格竖线淡影
-        ctx.strokeStyle = 'rgba(229,165,181,0.25)';
-        ctx.beginPath(); ctx.moveTo(w-2,0); ctx.lineTo(w-2,h); ctx.stroke();
-
-        // 计算当前应否“高电平”：保持与速度、占空比/放电状态相关
-        const speed = +speedEl.value;          // 1-100
-        const hz = map(speed,1,100,0.5,10);    // 每秒脉冲数
-        const duty = 0.2;                      // 固定占空比（20%），无随机
-        const t = (performance.now()/1000)%1;
-        const phase = (t*hz)%1;
-        const high = holdFire || (isRunning && modeEl.value === 'pulse' && phase < duty);
-
-        // 计算幅值（强度）
-        const amp = currentLevel/100;          // 0-1
-        const baseline = h*0.75;               // 基线
-        const highY = baseline - amp*(h*0.6);  // 向上幅度
-
-        // 画右侧2px柱：高电平为上跳，低电平贴近基线
-        ctx.strokeStyle = 'rgba(229,165,181,0.95)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const y1 = high ? highY : baseline;
-        ctx.moveTo(w-2, y1);
-        ctx.lineTo(w-2, baseline);
-        ctx.stroke();
-      }
-
-      // —— 主动画帧 —— 
-      function tick(now){
-        if(!isRunning && !holdFire){ return; } // 若既不运行也未按住放电，则暂不刷新
-        latencyEl.textContent = latency + ' ms';
-
-        // 设备位移动画（沿用原逻辑，受 speed/depth/intensity 影响；不引入随机）
-        const depth = +depthEl.value;
-        const intensity = +intEl.value;
-        const speed = +speedEl.value;
-        const elapsed = (now - startTime)/1000;
-        const basePx = map(depth, 0, 100, 0, 80);
-
-        let pos = 0;
-        const mode = modeEl.value;
-        if(mode === 'wave'){
-          const freq = map(speed, 1, 100, 0.4, 3.5);
-          pos = Math.sin(elapsed * freq * Math.PI * 2) * basePx * (intensity/100);
-        } else if(mode === 'pulse'){
-          const rate = map(speed, 1, 100, 0.5, 10);
-          const phase = (elapsed * rate) % 1;
-          pos = (phase < 0.15) ? basePx * (intensity/100) : 0;
-        } else if(mode === 'random'){
-          // 去除随机波动：保持为零位（或可改为轻微正弦）
-          pos = 0;
-        } else if(mode === 'manual'){
-          pos = parseFloat(piston.dataset.pos || 0);
-        }
-        const cur = parseFloat(piston.dataset._smooth || 0);
-        const smooth = cur + (pos - cur) * 0.18;
-        piston.dataset._smooth = smooth;
-        piston.style.transform = `translateY(${ -smooth }px)`;
-        piston.dataset.pos = -smooth;
-
-        // 画布推进（固定步长，无随机）
-        drawPulseStep(1/60);
-
-        // 循环动画：若仍在运行或仍在按住放电则继续
-        tickHandle = requestAnimationFrame(tick);
-      }
-
-      function map(v,a,b,c,d){ return c + (d - c) * ((v - a) / (b - a)); }
-
-      // 保持参数显示即时更新
-      setInterval(()=> {
-        speedVal.textContent = speedEl.value;
-        depthVal.textContent = depthEl.value;
-        intVal.textContent = intEl.value;
-        updateLiveParams();
-        if(!isRunning && holdFire){ // 按住放电时也要持续刷新示波
-          tickHandle = requestAnimationFrame(tick);
-        }
-      }, 120);
-
-      // 初始
-      log('系统启动完成');
-      clearScope(true);
-    })();
+    // 初始日志
+    log('系统启动完成');
+  })();
   </script>
 </body>
 </html>
