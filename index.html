@@ -282,7 +282,7 @@
   const BREATH_AMP = 0.06;            // ±6%
   function currentBreathRx(baseRx, tSec){
     const spd = +speedEl.value || 50;
-    const f = map(spd, 1,100, 0.1,0.9);   // 0.08–0.5 Hz（很慢，不会太快）
+    const f = map(spd, 1,100, 0.9,1.9);   // 0.08–0.5 Hz（很慢，不会太快）
     return baseRx * (1 + BREATH_AMP * Math.sin(2*Math.PI*f*tSec));
   }
 
